@@ -1,36 +1,36 @@
-# LLM-Gateway Implementierungskonzept v1.3 
 
-**Kostenoptimiertes AI-Routing für OpenClaw**
+# LLM Gateway Implementation Concept v1.3
 
-Version 1.3 (Cost-Optimized) – Februar 2026
-Mit Vibe Code Beispiel 
+**Cost-Optimized AI Routing for OpenClaw**
 
-> **Hetzner + Groq Router + Prompt Caching = 73% Kostenreduktion**
+Version 1.3 (Cost-Optimized) – February 2026
+
+> **VPS + Groq Router + Prompt Caching = 73% Cost Reduction**
 > 
-> Monatliche Kosten: ~€25-30 statt €92 (AWS-Baseline)
+> Monthly Costs: ~€25-30 instead of €92 (Cloud baseline)
 
 ---
 
-## Inhaltsverzeichnis
+## Table of Contents
 
 1. [Executive Summary](#1-executive-summary)
-2. [Architektur-Übersicht](#2-architektur-übersicht)
-3. [Infrastruktur: Hetzner statt AWS](#3-infrastruktur-hetzner-statt-aws)
-4. [Dreistufiges Routing](#4-dreistufiges-routing)
-5. [Groq als Router](#5-groq-als-router)
-6. [Hard Policy Gate (Sicherheit)](#6-hard-policy-gate-sicherheit)
+2. [Architecture Overview](#2-architecture-overview)
+3. [Infrastructure: VPS Instead of Cloud Platform](#3-infrastructure-vps-instead-of-cloud-platform)
+4. [Three-Tier Routing](#4-three-tier-routing)
+5. [Groq as Router](#5-groq-as-router)
+6. [Hard Policy Gate (Security)](#6-hard-policy-gate-security)
 7. [Rate Limiting & Kill Switch](#7-rate-limiting--kill-switch)
-8. [Zweistufiges Caching](#8-zweistufiges-caching)
+8. [Two-Stage Caching](#8-two-stage-caching)
 9. [Hybrid Retrieval (BM25 + Embeddings)](#9-hybrid-retrieval-bm25--embeddings)
 10. [Anthropic Prompt Caching](#10-anthropic-prompt-caching)
 11. [Context Budgeting & Compression](#11-context-budgeting--compression)
 12. [Capability-based Tools](#12-capability-based-tools)
-13. [Deterministisches Patching](#13-deterministisches-patching)
+13. [Deterministic Patching](#13-deterministic-patching)
 14. [Patch Risk Score](#14-patch-risk-score)
 15. [Risk-Stratified Verifier](#15-risk-stratified-verifier)
 16. [Monitoring & KPIs](#16-monitoring--kpis)
-17. [Implementierungsplan](#17-implementierungsplan)
-18. [Kostenprognose](#18-kostenprognose)
+17. [Implementation Plan](#17-implementation-plan)
+18. [Cost Forecast](#18-cost-forecast)
 19. [Changelog](#19-changelog)
 
 ---
@@ -39,52 +39,52 @@ Mit Vibe Code Beispiel
 
 ### 1.1 Problem
 
-OpenClaw (AI Coding Assistant) benötigt LLM-Zugriff für:
-- Code-Erklärungen und Dokumentation
-- Bug-Fixes und Refactoring-Vorschläge
-- Shell-Kommando-Generierung
-- Code-Reviews
+OpenClaw (AI Coding Assistant) requires LLM access for:
+- Code explanations and documentation
+- Bug fixes and refactoring suggestions
+- Shell command generation
+- Code reviews
 
-**Herausforderung:** Claude Sonnet kostet $3/1M Input + $15/1M Output. Bei 100+ Requests/Tag entstehen schnell $100+/Monat.
+**Challenge:** Claude Sonnet costs $3/1M Input + $15/1M Output. At 100+ requests/day, costs quickly exceed $100+/month.
 
-### 1.2 Lösung
+### 1.2 Solution
 
-Ein intelligentes Gateway mit:
+An intelligent gateway with:
 
-| Komponente | Funktion | Kosteneffekt |
-|------------|----------|--------------|
-| **Dreistufiges Routing** | Einfache Fragen → günstige Modelle | -60% API-Kosten |
-| **Zweistufiges Caching** | Exact + Semantic Cache | -30% redundante Calls |
-| **Groq Router** | Schnelle Intent-Classification | 3x schneller als Ollama |
-| **Prompt Caching** | Anthropic cached System-Prompts | -90% System-Prompt-Kosten |
-| **Context Budgeting** | Begrenzte Input-Tokens pro Tier | -40% Premium Input |
-| **Hetzner Infrastruktur** | Festpreis statt AWS Pay-per-Use | -€60/Monat |
+| Component | Function | Cost Impact |
+|-----------|----------|-------------|
+| **Three-Tier Routing** | Simple questions → cheap models | -60% API costs |
+| **Two-Stage Caching** | Exact + Semantic Cache | -30% redundant calls |
+| **Groq Router** | Fast intent classification | 3x faster than Ollama |
+| **Prompt Caching** | Anthropic cached system prompts | -90% system prompt costs |
+| **Context Budgeting** | Limited input tokens per tier | -40% premium input |
+| **VPS Infrastructure** | Fixed price instead of pay-per-use | -€60/month |
 
-### 1.3 Kostenvergleich
+### 1.3 Cost Comparison
 
-| Szenario | AWS (v1.2) | Hetzner (v1.3) | Ersparnis |
-|----------|------------|----------------|-----------|
-| Server | $74 (t3.medium) | €8,50 (CX22) | -€60 |
-| Speicher | $5 (EBS) | €0 (inkl.) | -€5 |
-| Traffic | $5-10 | €0 (20TB inkl.) | -€7 |
-| Router | $0 (Ollama) | €1-2 (Groq) | +€1,50 |
-| Premium (mit Caching) | $25-35 | €8-12 | -€20 |
+| Scenario | Cloud Platform (v1.2) | VPS (v1.3) | Savings |
+|----------|----------------------|------------|---------|
+| Server | $74 (2 vCPU / 4GB) | €8.50 (4GB VPS) | -€60 |
+| Storage | $5 (block storage) | €0 (included) | -€5 |
+| Traffic | $5-10 | €0 (20TB included) | -€7 |
+| Router | $0 (Ollama) | €1-2 (Groq) | +€1.50 |
+| Premium (with caching) | $25-35 | €8-12 | -€20 |
 | Embeddings + Verifier | $3-5 | €1-2 | -€3 |
-| **TOTAL** | **~€92/Monat** | **~€25/Monat** | **-73%** |
+| **TOTAL** | **~€92/month** | **~€25/month** | **-73%** |
 
-### 1.4 Architektur-Entscheidung
+### 1.4 Architecture Decision
 
-| Option | Wann wählen? | Kosten |
-|--------|--------------|--------|
-| **Hetzner + Groq** | Standard-Empfehlung; niedrige Kosten, einfache Wartung | €25-30/Monat |
-| **Hetzner + Ollama** | Wenn 100% lokal/offline nötig; 8GB Server | €35/Monat |
-| **AWS + Ollama** | Nur wenn AWS-Ökosystem Pflicht (IAM, VPC) | €90+/Monat |
+| Option | When to Choose? | Cost |
+|--------|----------------|------|
+| **4GB VPS + Groq** | Standard recommendation; low cost, easy maintenance | €25-30/month |
+| **8GB VPS + Ollama** | When 100% local/offline is required | €35/month |
+| **Cloud Platform + Ollama** | Only when cloud ecosystem is mandatory (IAM, VPC) | €90+/month |
 
 ---
 
-## 2. Architektur-Übersicht
+## 2. Architecture Overview
 
-### 2.1 Request-Flow
+### 2.1 Request Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -96,13 +96,13 @@ Ein intelligentes Gateway mit:
         ▼
 ┌───────────────────┐
 │  Hard Policy Gate │ ──── BLOCK ───► 403 Forbidden
-│  (Sicherheit)     │                 (rm -rf, secrets, etc.)
+│  (Security)       │                 (rm -rf, secrets, etc.)
 └───────────────────┘
         │ PASS
         ▼
 ┌───────────────────┐
 │  Rate Limiter     │ ──── BLOCK ───► 429 Too Many Requests
-│  + Budget Guard   │                 (Daily Cap erreicht)
+│  + Budget Guard   │                 (Daily cap reached)
 └───────────────────┘
         │ PASS
         ▼
@@ -120,16 +120,16 @@ Ein intelligentes Gateway mit:
         ▼
 ┌───────────────────┐
 │  Groq Router      │
-│  (Intent-Class.)  │
+│  (Intent Class.)  │
 └───────────────────┘
         │
-        ├── CACHE_ONLY ──► "Bitte präzisieren"
+        ├── CACHE_ONLY ──► "Please be more specific"
         │
-        ├── LOCAL ──────► Haiku (günstig)
+        ├── LOCAL ──────► Haiku (cheap)
         │
-        ├── CHEAP ──────► Haiku (günstig)
+        ├── CHEAP ──────► Haiku (cheap)
         │
-        └── PREMIUM ────► Sonnet (mit Prompt Caching)
+        └── PREMIUM ────► Sonnet (with Prompt Caching)
                               │
                               ▼
                     ┌─────────────────┐
@@ -147,11 +147,11 @@ Ein intelligentes Gateway mit:
                     └─────────────────┘
 ```
 
-### 2.2 Komponenten-Übersicht
+### 2.2 Component Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           HETZNER CX22 (4GB RAM)                            │
+│                        4GB VIRTUAL PRIVATE SERVER                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
@@ -161,7 +161,7 @@ Ein intelligentes Gateway mit:
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                           EXTERNE SERVICES                                  │
+│                           EXTERNAL SERVICES                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
@@ -175,71 +175,71 @@ Ein intelligentes Gateway mit:
 
 ---
 
-## 3. Infrastruktur: Hetzner statt AWS
+## 3. Infrastructure: VPS Instead of Cloud Platform
 
-### 3.1 Warum Hetzner?
+### 3.1 Why a VPS?
 
-| Aspekt | AWS t3.medium | Hetzner CX22 | Vorteil |
-|--------|---------------|--------------|---------|
-| **Preis** | $74/Monat + Extras | €4,35/Monat fix | -90% Basis |
-| **RAM** | 4GB (burstable) | 4GB (dediziert) | Kein Throttling |
-| **Storage** | $0,10/GB (EBS) | 40GB inkl. | Keine IOPS-Kosten |
-| **Traffic** | $0,09/GB out | 20TB inkl. | Keine Überraschungen |
-| **Standort** | us-east-1 | Nürnberg/Falkenstein | DSGVO, niedrige Latenz |
-| **Komplexität** | IAM, VPC, SG | SSH + Firewall | Einfacher |
+| Aspect | Cloud Instance (4GB burstable) | 4GB VPS (dedicated) | Advantage |
+|--------|-------------------------------|---------------------|-----------|
+| **Price** | $74/month + extras | ~€4.35/month fixed | -90% base |
+| **RAM** | 4GB (burstable) | 4GB (dedicated) | No throttling |
+| **Storage** | $0.10/GB (block) | 40GB included | No IOPS costs |
+| **Traffic** | $0.09/GB outbound | 20TB included | No surprises |
+| **Location** | Variable | EU datacenter | GDPR, low latency |
+| **Complexity** | IAM, VPC, SG | SSH + Firewall | Simpler |
 
-### 3.2 Server-Optionen
+### 3.2 Server Options
 
-| Server | RAM | vCPU | SSD | Preis | Use-Case |
+| Server | RAM | vCPU | SSD | Price | Use Case |
 |--------|-----|------|-----|-------|----------|
-| **CX22** | 4GB | 2 | 40GB | €4,35 | Groq-Router (empfohlen) |
-| **CX32** | 8GB | 4 | 80GB | €7,05 | Ollama lokal |
-| **CX42** | 16GB | 8 | 160GB | €14,76 | Heavy Workload |
+| **4GB VPS** | 4GB | 2 | 40GB | ~€4.35 | Groq router (recommended) |
+| **8GB VPS** | 8GB | 4 | 80GB | ~€7.05 | Ollama local |
+| **16GB VPS** | 16GB | 8 | 160GB | ~€14.76 | Heavy workload |
 
-### 3.3 Server-Setup
+### 3.3 Server Setup
 
 ```bash
-# 1. Hetzner Cloud Console: CX22 mit Ubuntu 24.04 LTS erstellen
+# 1. Order a 4GB VPS with Ubuntu 24.04 LTS from your provider
 
-# 2. SSH-Zugang einrichten
+# 2. Set up SSH access
 ssh root@<server-ip>
 
-# 3. Basis-Setup
+# 3. Base setup
 apt update && apt upgrade -y
 apt install -y python3-pip python3-venv nginx certbot python3-certbot-nginx
 
-# 4. Firewall konfigurieren
+# 4. Configure firewall
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw enable
 
-# 5. Non-root User erstellen
+# 5. Create non-root user
 adduser gateway
 usermod -aG sudo gateway
 su - gateway
 
-# 6. Gateway installieren
+# 6. Install gateway
 cd /opt
 sudo mkdir llm-gateway && sudo chown gateway:gateway llm-gateway
 cd llm-gateway
 python3 -m venv venv
 source venv/bin/activate
 
-# 7. Dependencies installieren
+# 7. Install dependencies
 pip install fastapi uvicorn httpx anthropic openai tenacity sqlite-utils
 
-# 8. Environment Variables
+# 8. Environment variables
 cat > .env << 'EOF'
 GROQ_API_KEY=gsk_...
 ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...  # Nur für Embeddings-Fallback
+OPENAI_API_KEY=sk-...  # Only for embeddings fallback
 GATEWAY_SECRET=<random-secret>
 DAILY_BUDGET_HARD=50.0
 DAILY_BUDGET_SOFT=5.0
 EOF
 
-# 9. Systemd Service
+# 9. Systemd service
 sudo cat > /etc/systemd/system/llm-gateway.service << 'EOF'
 [Unit]
 Description=LLM Gateway
@@ -263,7 +263,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable llm-gateway
 sudo systemctl start llm-gateway
 
-# 10. Nginx Reverse Proxy + SSL
+# 10. Nginx reverse proxy + SSL
 sudo cat > /etc/nginx/sites-available/llm-gateway << 'EOF'
 server {
     listen 80;
@@ -282,98 +282,98 @@ EOF
 sudo ln -s /etc/nginx/sites-available/llm-gateway /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
-# 11. SSL mit Let's Encrypt
+# 11. SSL with Let's Encrypt
 sudo certbot --nginx -d gateway.yourdomain.com
 ```
 
 ---
 
-## 4. Dreistufiges Routing
+## 4. Three-Tier Routing
 
-### 4.1 Tier-Definitionen
+### 4.1 Tier Definitions
 
-| Tier | Modell | Kosten | Latenz | Use-Case |
-|------|--------|--------|--------|----------|
-| **LOCAL** | Haiku (via Groq Fallback) | $0.25/1M | 200ms | Einfache Fragen |
-| **CHEAP** | Claude Haiku | $0.25/1M in, $1.25/1M out | 300ms | Erklärungen, Docs |
-| **PREMIUM** | Claude Sonnet | $3/1M in, $15/1M out | 500ms | Code-Generierung, Patches |
+| Tier | Model | Cost | Latency | Use Case |
+|------|-------|------|---------|----------|
+| **LOCAL** | Haiku (via Groq Fallback) | $0.25/1M | 200ms | Simple questions |
+| **CHEAP** | Claude Haiku | $0.25/1M in, $1.25/1M out | 300ms | Explanations, docs |
+| **PREMIUM** | Claude Sonnet | $3/1M in, $15/1M out | 500ms | Code generation, patches |
 
-### 4.2 Router-Logik
+### 4.2 Router Logic
 
 ```python
 from enum import Enum
 from pydantic import BaseModel
 
 class RouterAction(str, Enum):
-    CACHE_ONLY = "cache_only"    # Zu vage, kein LLM-Call
-    LOCAL = "local"              # Einfache Fragen
-    CHEAP = "cheap"              # Erklärungen, Dokumentation
-    PREMIUM = "premium"          # Code-Generierung, komplexe Tasks
+    CACHE_ONLY = "cache_only"    # Too vague, no LLM call
+    LOCAL = "local"              # Simple questions
+    CHEAP = "cheap"              # Explanations, documentation
+    PREMIUM = "premium"          # Code generation, complex tasks
 
 class RouterResult(BaseModel):
     action: RouterAction
     confidence: float           # 0.0 - 1.0
-    response_type: str          # Für Cache-TTL und Verifier
-    reason: str                 # Für Logging/Debugging
+    response_type: str          # For cache TTL and verifier
+    reason: str                 # For logging/debugging
 
-# Response Types für Cache-Management
+# Response types for cache management
 RESPONSE_TYPES = {
     "explanation_generic": {
-        "description": "Allgemeine Erklärungen (Was ist X?)",
-        "ttl_base": 7 * 24 * 3600,  # 7 Tage
+        "description": "General explanations (What is X?)",
+        "ttl_base": 7 * 24 * 3600,  # 7 days
         "tier": "cheap"
     },
     "explanation_contextual": {
-        "description": "Projekt-spezifische Erklärungen",
-        "ttl_base": 24 * 3600,  # 24 Stunden
+        "description": "Project-specific explanations",
+        "ttl_base": 24 * 3600,  # 24 hours
         "tier": "cheap"
     },
     "code_suggestion": {
-        "description": "Code-Vorschläge, Patches",
-        "ttl_base": 0,  # Invalidiert bei Git-Commit
+        "description": "Code suggestions, patches",
+        "ttl_base": 0,  # Invalidated on git commit
         "tier": "premium"
     },
     "code_review": {
-        "description": "Code-Reviews, Best Practices",
-        "ttl_base": 12 * 3600,  # 12 Stunden
+        "description": "Code reviews, best practices",
+        "ttl_base": 12 * 3600,  # 12 hours
         "tier": "premium"
     },
     "command_execution": {
-        "description": "Shell-Kommandos, CLI",
-        "ttl_base": 3600,  # 1 Stunde
+        "description": "Shell commands, CLI",
+        "ttl_base": 3600,  # 1 hour
         "tier": "premium"
     },
     "documentation": {
-        "description": "API-Docs, README-Generierung",
+        "description": "API docs, README generation",
         "ttl_base": 24 * 3600,
         "tier": "cheap"
     }
 }
 ```
 
-### 4.3 Router System-Prompt
+### 4.3 Router System Prompt
 
 ```python
-ROUTER_SYSTEM_PROMPT = """Du bist ein Intent-Classifier für Coding-Anfragen.
+ROUTER_SYSTEM_PROMPT = """You are an intent classifier for coding requests.
 
-Klassifiziere die Anfrage in GENAU EINE Kategorie:
+Classify the request into EXACTLY ONE category:
 
-CACHE_ONLY - Anfrage ist zu vage/unklar für sinnvolle Antwort
-  Beispiele: "help", "?", "code", "fix it"
+CACHE_ONLY - Request is too vague/unclear for a meaningful answer
+  Examples: "help", "?", "code", "fix it"
 
-LOCAL - Triviale Fragen, die keine Code-Analyse brauchen
-  Beispiele: "Was bedeutet HTTP 404?", "Wie heißt der Befehl für..."
+LOCAL - Trivial questions that don't require code analysis
+  Examples: "What does HTTP 404 mean?", "What's the command for..."
 
-CHEAP - Erklärungen, Dokumentation, allgemeine Best Practices
-  Beispiele: "Erkläre mir async/await", "Was ist der Unterschied zwischen..."
+CHEAP - Explanations, documentation, general best practices
+  Examples: "Explain async/await to me", "What's the difference between..."
 
-PREMIUM - Code-Generierung, Patches, komplexe Analyse, projektspezifisch
-  Beispiele: "Schreibe eine Funktion die...", "Fixe den Bug in...", "Refactore..."
+PREMIUM - Code generation, patches, complex analysis, project-specific
+  Examples: "Write a function that...", "Fix the bug in...", "Refactor..."
 
-Antworte NUR mit JSON:
+Reply ONLY with JSON:
 {"action": "...", "confidence": 0.0-1.0, "response_type": "...", "reason": "..."}
 
-response_type muss einer von sein:
+response_type must be one of:
 - explanation_generic
 - explanation_contextual  
 - code_suggestion
@@ -384,18 +384,18 @@ response_type muss einer von sein:
 
 ---
 
-## 5. Groq als Router
+## 5. Groq as Router
 
-### 5.1 Warum Groq statt Ollama?
+### 5.1 Why Groq Instead of Ollama?
 
-| Aspekt | Ollama (lokal) | Groq (API) |
+| Aspect | Ollama (local) | Groq (API) |
 |--------|----------------|------------|
-| **Latenz** | 500-800ms (warm), 2-4s (kalt) | 150-250ms (konstant) |
-| **RAM-Bedarf** | 2,5 GB (30% von 8GB) | 0 GB |
-| **OOM-Risiko** | Ja (mit Cache + Embeddings) | Nein |
-| **Wartung** | Updates, Monitoring, Tuning | Keine |
-| **Kosten** | €0 (aber größerer Server nötig) | ~€1-2/Monat |
-| **Offline-Fähig** | Ja | Nein |
+| **Latency** | 500-800ms (warm), 2-4s (cold) | 150-250ms (constant) |
+| **RAM Usage** | 2.5 GB (30% of 8GB) | 0 GB |
+| **OOM Risk** | Yes (with cache + embeddings) | No |
+| **Maintenance** | Updates, monitoring, tuning | None |
+| **Cost** | €0 (but larger server needed) | ~€1-2/month |
+| **Offline Capable** | Yes | No |
 
 ### 5.2 Groq Implementation
 
@@ -412,9 +412,9 @@ GROQ_MODEL = "llama-3.1-8b-instant"  # $0.05/1M input, $0.08/1M output
     wait=wait_exponential(multiplier=0.5, min=0.1, max=2)
 )
 async def groq_classify(query: str, context: str = "") -> RouterResult:
-    """Klassifiziert Intent via Groq Llama 3.1 8B"""
+    """Classifies intent via Groq Llama 3.1 8B"""
     
-    user_content = f"Kontext: {context}\n\nAnfrage: {query}" if context else query
+    user_content = f"Context: {context}\n\nQuery: {query}" if context else query
     
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -448,52 +448,52 @@ async def groq_classify(query: str, context: str = "") -> RouterResult:
         )
 ```
 
-### 5.3 Kosten-Rechnung Groq
+### 5.3 Groq Cost Calculation
 
 ```python
-# Annahmen:
-# - 500 Requests/Tag
-# - 300 Tokens pro Router-Call (System-Prompt + Query + Response)
+# Assumptions:
+# - 500 requests/day
+# - 300 tokens per router call (system prompt + query + response)
 
-monthly_requests = 500 * 30  # = 15.000
+monthly_requests = 500 * 30  # = 15,000
 tokens_per_request = 300
-monthly_tokens = monthly_requests * tokens_per_request  # = 4.500.000
+monthly_tokens = monthly_requests * tokens_per_request  # = 4,500,000
 
-# Groq Llama 3.1 8B Instant Pricing (Stand Feb 2026)
-input_price = 0.05 / 1_000_000   # $0.05 pro 1M Input
-output_price = 0.08 / 1_000_000  # $0.08 pro 1M Output
+# Groq Llama 3.1 8B Instant Pricing (as of Feb 2026)
+input_price = 0.05 / 1_000_000   # $0.05 per 1M input
+output_price = 0.08 / 1_000_000  # $0.08 per 1M output
 
-# ~90% sind Input (System-Prompt + Query), ~10% Output
-input_tokens = monthly_tokens * 0.9  # = 4.050.000
-output_tokens = monthly_tokens * 0.1  # = 450.000
+# ~90% are input (system prompt + query), ~10% output
+input_tokens = monthly_tokens * 0.9  # = 4,050,000
+output_tokens = monthly_tokens * 0.1  # = 450,000
 
 monthly_cost = (input_tokens * input_price) + (output_tokens * output_price)
-# = $0.2025 + $0.036 = $0.24/Monat
+# = $0.2025 + $0.036 = $0.24/month
 
-# Mit Sicherheitspuffer: ~€1-2/Monat
+# With safety buffer: ~€1-2/month
 ```
 
-### 5.4 Fallback-Kette
+### 5.4 Fallback Chain
 
 ```python
 async def route_with_resilience(query: str, context: str = "") -> RouterResult:
-    """Router mit Fallback-Kette: Groq → Haiku → Default"""
+    """Router with fallback chain: Groq → Haiku → Default"""
     
-    # Primär: Groq (schnell, günstig)
+    # Primary: Groq (fast, cheap)
     try:
         return await groq_classify(query, context)
     except (httpx.TimeoutException, httpx.HTTPStatusError) as e:
         log.warning(f"Groq failed: {e}, falling back to Haiku")
         metrics.increment("router_fallback", tags={"from": "groq", "to": "haiku"})
     
-    # Sekundär: Haiku (teurer, aber zuverlässig)
+    # Secondary: Haiku (more expensive, but reliable)
     try:
         return await haiku_classify(query, context)
     except Exception as e:
         log.error(f"Haiku classifier failed: {e}, using default")
         metrics.increment("router_fallback", tags={"from": "haiku", "to": "default"})
     
-    # Ultima Ratio: Sicherheitsmodus → Premium
+    # Last resort: Safety mode → Premium
     return RouterResult(
         action=RouterAction.PREMIUM,
         confidence=0.5,
@@ -504,16 +504,16 @@ async def route_with_resilience(query: str, context: str = "") -> RouterResult:
 
 ---
 
-## 6. Hard Policy Gate (Sicherheit)
+## 6. Hard Policy Gate (Security)
 
-### 6.1 Warum VOR dem Router?
+### 6.1 Why Before the Router?
 
-Das Hard Policy Gate läuft **VOR** dem LLM-Router, um:
-1. Gefährliche Anfragen sofort zu blocken (kein LLM-Call nötig)
-2. Prompt-Injection-Versuche abzufangen
-3. Kosten für offensichtlich illegitime Anfragen zu sparen
+The Hard Policy Gate runs **BEFORE** the LLM router to:
+1. Block dangerous requests immediately (no LLM call needed)
+2. Intercept prompt injection attempts
+3. Save costs for obviously illegitimate requests
 
-### 6.2 Blocklisten
+### 6.2 Blocklists
 
 ```python
 import re
@@ -525,44 +525,44 @@ class PolicyViolation(Exception):
         self.pattern = pattern
         self.message = message
 
-# Gefährliche Shell-Kommandos
+# Dangerous shell commands
 DANGEROUS_COMMANDS = [
-    # Destruktive Operationen
+    # Destructive operations
     r"\brm\s+(-[rf]+\s+)*(/|~|\$HOME|\*)",
     r"\bmkfs\b",
     r"\bdd\s+.*of=/dev/",
-    r"\b:(){.*};\s*:",  # Fork Bomb
+    r"\b:(){.*};\s*:",  # Fork bomb
     r"\bchmod\s+(-R\s+)?[0-7]*777",
     r"\bchown\s+-R\s+.*\s+/",
     
-    # Netzwerk-Angriffe
+    # Network attacks
     r"\bnc\s+.*-e\s+/bin/(ba)?sh",
     r"\bcurl\s+.*\|\s*(ba)?sh",
     r"\bwget\s+.*-O\s*-\s*\|\s*(ba)?sh",
     
-    # Crypto-Mining
+    # Crypto mining
     r"\b(xmrig|minerd|cgminer|bfgminer)\b",
     
-    # Service-Manipulation
+    # Service manipulation
     r"\bsystemctl\s+(stop|disable|mask)\s+(ssh|sshd|ufw|iptables)",
     r"\bservice\s+\w+\s+(stop|disable)",
     
-    # Indirekte destruktive Ops (NEU in v1.2)
+    # Indirect destructive ops (NEW in v1.2)
     r"\bfind\s+.*-delete",
     r"\btruncate\s+--size\s*0",
 ]
 
-# Sensitive Daten-Patterns
+# Sensitive data patterns
 SENSITIVE_PATTERNS = [
     r"(api[_-]?key|secret|password|token)\s*[=:]\s*['\"]?[\w-]{20,}",
     r"-----BEGIN\s+(RSA\s+)?PRIVATE\s+KEY-----",
     r"aws_secret_access_key\s*=",
-    r"ghp_[a-zA-Z0-9]{36}",  # GitHub Token
-    r"sk-[a-zA-Z0-9]{48}",   # OpenAI Key
-    r"sk-ant-[a-zA-Z0-9-]{95}",  # Anthropic Key
+    r"ghp_[a-zA-Z0-9]{36}",  # GitHub token
+    r"sk-[a-zA-Z0-9]{48}",   # OpenAI key
+    r"sk-ant-[a-zA-Z0-9-]{95}",  # Anthropic key
 ]
 
-# Forbidden Paths
+# Forbidden paths
 FORBIDDEN_PATHS = [
     r"/etc/(passwd|shadow|sudoers)",
     r"/root/",
@@ -571,22 +571,22 @@ FORBIDDEN_PATHS = [
     r"\.(pem|key|crt)$",
 ]
 
-# Unicode-Normalisierung (gegen Bypass-Versuche)
+# Unicode normalization (against bypass attempts)
 def normalize_unicode(text: str) -> str:
-    """Normalisiert Unicode-Tricks wie unsichtbare Zeichen"""
+    """Normalizes Unicode tricks like invisible characters"""
     import unicodedata
-    # NFKC normalisiert ① → 1, ᴿ → R, etc.
+    # NFKC normalizes ① → 1, ᴿ → R, etc.
     text = unicodedata.normalize("NFKC", text)
-    # Entferne Zero-Width-Characters
+    # Remove zero-width characters
     text = re.sub(r"[\u200b-\u200f\u2060\ufeff]", "", text)
     return text
 
 def check_hard_policy(query: str) -> Optional[PolicyViolation]:
     """
-    Prüft Query gegen Hard Policy Rules.
-    Returns None wenn OK, sonst PolicyViolation.
+    Checks query against hard policy rules.
+    Returns None if OK, otherwise PolicyViolation.
     """
-    # Normalisiere zuerst
+    # Normalize first
     normalized = normalize_unicode(query.lower())
     
     # Check dangerous commands
@@ -595,16 +595,16 @@ def check_hard_policy(query: str) -> Optional[PolicyViolation]:
             return PolicyViolation(
                 category="dangerous_command",
                 pattern=pattern,
-                message="Gefährliches Kommando erkannt"
+                message="Dangerous command detected"
             )
     
-    # Check sensitive data (auch in Original, nicht nur normalized)
+    # Check sensitive data (also in original, not just normalized)
     for pattern in SENSITIVE_PATTERNS:
         if re.search(pattern, query, re.IGNORECASE):
             return PolicyViolation(
                 category="sensitive_data",
                 pattern=pattern,
-                message="Sensible Daten in Anfrage erkannt"
+                message="Sensitive data detected in request"
             )
     
     # Check forbidden paths
@@ -613,7 +613,7 @@ def check_hard_policy(query: str) -> Optional[PolicyViolation]:
             return PolicyViolation(
                 category="forbidden_path",
                 pattern=pattern,
-                message="Zugriff auf geschützten Pfad"
+                message="Access to protected path"
             )
     
     return None
@@ -622,16 +622,16 @@ def check_hard_policy(query: str) -> Optional[PolicyViolation]:
 ### 6.3 Command Allowlist (Capability-Based)
 
 ```python
-# Statt Blocklist: Explizite Allowlist für Tool-Operationen
+# Instead of blocklist: Explicit allowlist for tool operations
 ALLOWED_COMMANDS = {
     # Git (read-mostly)
     "git": ["status", "diff", "log", "show", "branch", "remote", "fetch"],
     
-    # Package Managers (read + install)
+    # Package managers (read + install)
     "npm": ["list", "outdated", "audit", "install", "ci", "run", "test"],
     "pip": ["list", "show", "check", "install"],
     
-    # Build Tools
+    # Build tools
     "make": ["*"],  # Makefile-defined targets
     "cargo": ["build", "test", "check", "clippy", "fmt"],
     
@@ -639,13 +639,13 @@ ALLOWED_COMMANDS = {
     "docker": ["ps", "images", "logs", "inspect", "stats"],
     "docker-compose": ["ps", "logs", "config"],
     
-    # System Info (read-only)
+    # System info (read-only)
     "ls": ["*"],
-    "cat": ["*"],  # Mit Path-Restriction!
+    "cat": ["*"],  # With path restriction!
     "head": ["*"],
     "tail": ["*"],
     "grep": ["*"],
-    "find": ["-name", "-type", "-mtime"],  # Kein -delete!
+    "find": ["-name", "-type", "-mtime"],  # No -delete!
     "du": ["*"],
     "df": ["*"],
     "free": ["*"],
@@ -654,7 +654,7 @@ ALLOWED_COMMANDS = {
 }
 
 def is_command_allowed(command: str, args: list[str]) -> bool:
-    """Prüft ob Kommando auf Allowlist ist"""
+    """Checks if command is on the allowlist"""
     if command not in ALLOWED_COMMANDS:
         return False
     
@@ -662,7 +662,7 @@ def is_command_allowed(command: str, args: list[str]) -> bool:
     if "*" in allowed_args:
         return True
     
-    # Prüfe jedes Argument
+    # Check each argument
     for arg in args:
         if arg.startswith("-"):
             if arg not in allowed_args:
@@ -686,10 +686,10 @@ class RateLimiter:
     def __init__(self):
         self.limits = {
             "local": {
-                "rpm": 100,      # Requests per Minute
-                "tpm": 50_000,   # Tokens per Minute
+                "rpm": 100,      # Requests per minute
+                "tpm": 50_000,   # Tokens per minute
                 "daily_usd": 0,  # Unlimited (local)
-                "burst": 10      # Burst Buffer
+                "burst": 10      # Burst buffer
             },
             "cheap": {
                 "rpm": 50,
@@ -705,7 +705,7 @@ class RateLimiter:
             }
         }
         
-        # Tracking per Tier
+        # Tracking per tier
         self.minute_requests = defaultdict(list)  # tier -> [timestamps]
         self.minute_tokens = defaultdict(int)
         self.daily_spend = defaultdict(float)
@@ -718,29 +718,29 @@ class RateLimiter:
         now = datetime.now()
         limits = self.limits[tier]
         
-        # Daily Reset
+        # Daily reset
         if now.date() != self.last_reset.date():
             self.daily_spend.clear()
             self.last_reset = now
         
-        # Cleanup alte Timestamps (>1 Minute)
+        # Cleanup old timestamps (>1 minute)
         cutoff = now - timedelta(minutes=1)
         self.minute_requests[tier] = [
             ts for ts in self.minute_requests[tier] if ts > cutoff
         ]
         
-        # RPM Check
+        # RPM check
         if len(self.minute_requests[tier]) >= limits["rpm"]:
-            # Burst erlauben?
+            # Allow burst?
             if len(self.minute_requests[tier]) < limits["rpm"] + limits["burst"]:
                 return (True, "burst_allowed", 0)
             return (False, "rpm_exceeded", 60)
         
-        # TPM Check
+        # TPM check
         if self.minute_tokens[tier] + estimated_tokens > limits["tpm"]:
             return (False, "tpm_exceeded", 30)
         
-        # Daily Budget Check (Premium)
+        # Daily budget check (premium)
         if limits["daily_usd"] > 0:
             estimated_cost = self._estimate_cost(tier, estimated_tokens)
             if self.daily_spend[tier] + estimated_cost > limits["daily_usd"]:
@@ -749,29 +749,29 @@ class RateLimiter:
         return (True, "ok", 0)
     
     def record(self, tier: str, tokens_used: int, cost_usd: float):
-        """Zeichnet erfolgreichen Request auf"""
+        """Records successful request"""
         self.minute_requests[tier].append(datetime.now())
         self.minute_tokens[tier] += tokens_used
         self.daily_spend[tier] += cost_usd
     
     def _estimate_cost(self, tier: str, tokens: int) -> float:
-        """Schätzt Kosten basierend auf Tier"""
+        """Estimates cost based on tier"""
         prices = {
             "local": 0,
-            "cheap": 0.25 / 1_000_000,   # Haiku Input
-            "premium": 3.00 / 1_000_000   # Sonnet Input (Output separat)
+            "cheap": 0.25 / 1_000_000,   # Haiku input
+            "premium": 3.00 / 1_000_000   # Sonnet input (output separate)
         }
         return tokens * prices.get(tier, 0)
 ```
 
-### 7.2 Global Kill Switch (NEU in v1.3)
+### 7.2 Global Kill Switch (NEW in v1.3)
 
 ```python
 class BudgetGuard:
     """
-    Dreistufiges Budget-System:
+    Three-tier budget system:
     - Soft: Warning + Log
-    - Medium: Throttle (5s Delay)
+    - Medium: Throttle (5s delay)
     - Hard: Kill Switch (Premium disabled)
     """
     
@@ -793,7 +793,7 @@ class BudgetGuard:
             "reason": str
         }
         """
-        # Daily Reset
+        # Daily reset
         today = datetime.now().date()
         if today != self.last_reset:
             self.today_spend = 0.0
@@ -803,7 +803,7 @@ class BudgetGuard:
         
         projected = self.today_spend + estimated_cost
         
-        # Kill Switch aktiv?
+        # Kill switch active?
         if self.premium_disabled:
             if tier == "premium":
                 return {
@@ -811,10 +811,10 @@ class BudgetGuard:
                     "delay": 0,
                     "reason": "kill_switch_active"
                 }
-            # Local/Cheap noch erlaubt
+            # Local/Cheap still allowed
             return {"allowed": True, "delay": 0, "reason": "non_premium_allowed"}
         
-        # Hard Limit → Kill Switch aktivieren
+        # Hard limit → Activate kill switch
         if projected > self.limits["hard"]:
             self.premium_disabled = True
             log.critical(f"KILL SWITCH ACTIVATED: ${projected:.2f} > ${self.limits['hard']}")
@@ -825,7 +825,7 @@ class BudgetGuard:
                 "reason": "hard_limit_kill_switch"
             }
         
-        # Medium Limit → Throttle
+        # Medium limit → Throttle
         if projected > self.limits["medium"]:
             log.error(f"Budget ${projected:.2f} > Medium ${self.limits['medium']}, THROTTLING")
             return {
@@ -834,24 +834,24 @@ class BudgetGuard:
                 "reason": "throttle_medium_limit"
             }
         
-        # Soft Limit → Warning
+        # Soft limit → Warning
         if projected > self.limits["soft"]:
             log.warning(f"Budget ${projected:.2f} > Soft ${self.limits['soft']}")
         
         return {"allowed": True, "delay": 0, "reason": "ok"}
     
     def record_spend(self, cost: float):
-        """Zeichnet tatsächliche Kosten auf"""
+        """Records actual costs"""
         self.today_spend += cost
         metrics.gauge("daily_spend_usd", self.today_spend)
     
     def _alert_admin(self, message: str):
-        """Sendet Alert (Webhook, E-Mail, etc.)"""
+        """Sends alert (webhook, email, etc.)"""
         # TODO: Implement alerting
         pass
 ```
 
-### 7.3 Idempotency Keys (Verhindert Doppel-Calls)
+### 7.3 Idempotency Keys (Prevents Duplicate Calls)
 
 ```python
 import hashlib
@@ -859,8 +859,8 @@ from datetime import datetime, timedelta
 
 class IdempotencyGuard:
     """
-    Verhindert doppelte API-Calls bei Retries/Timeouts.
-    Cached Response für identische Requests für 5 Minuten.
+    Prevents duplicate API calls during retries/timeouts.
+    Caches response for identical requests for 5 minutes.
     """
     
     def __init__(self, ttl_seconds: int = 300):
@@ -868,7 +868,7 @@ class IdempotencyGuard:
         self.ttl = timedelta(seconds=ttl_seconds)
     
     def get_key(self, request: dict) -> str:
-        """Generiert eindeutigen Key aus Request-Inhalt"""
+        """Generates unique key from request content"""
         content = json.dumps({
             "model": request.get("model"),
             "messages": request.get("messages"),
@@ -878,7 +878,7 @@ class IdempotencyGuard:
         return hashlib.sha256(content.encode()).hexdigest()[:16]
     
     def check(self, key: str) -> Optional[dict]:
-        """Prüft ob Request bereits verarbeitet wurde"""
+        """Checks if request was already processed"""
         self._cleanup()
         
         if key in self.cache:
@@ -890,11 +890,11 @@ class IdempotencyGuard:
         return None
     
     def store(self, key: str, response: dict):
-        """Speichert Response für Key"""
+        """Stores response for key"""
         self.cache[key] = (response, datetime.now())
     
     def _cleanup(self):
-        """Entfernt abgelaufene Einträge"""
+        """Removes expired entries"""
         now = datetime.now()
         expired = [k for k, (_, ts) in self.cache.items() if now - ts > self.ttl]
         for k in expired:
@@ -903,9 +903,9 @@ class IdempotencyGuard:
 
 ---
 
-## 8. Zweistufiges Caching
+## 8. Two-Stage Caching
 
-### 8.1 Cache-Architektur
+### 8.1 Cache Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -945,8 +945,8 @@ from datetime import datetime, timedelta
 
 class ExactCache:
     """
-    Exakter Cache basierend auf SHA-256 Hash.
-    Verwendet Working-Tree Fingerprint für Kontext-Sensitivität.
+    Exact cache based on SHA-256 hash.
+    Uses working-tree fingerprint for context sensitivity.
     """
     
     def __init__(self, db_path: str = "cache.sqlite"):
@@ -970,12 +970,12 @@ class ExactCache:
         self.db.commit()
     
     def get_key(self, query: str, fingerprint: str) -> str:
-        """Generiert Cache-Key aus Query + Fingerprint"""
+        """Generates cache key from query + fingerprint"""
         content = f"{query}|{fingerprint}"
         return hashlib.sha256(content.encode()).hexdigest()
     
     def get(self, query: str, fingerprint: str) -> Optional[dict]:
-        """Sucht exakten Cache-Eintrag"""
+        """Looks up exact cache entry"""
         cache_key = self.get_key(query, fingerprint)
         now = datetime.now()
         
@@ -985,7 +985,7 @@ class ExactCache:
         """, (cache_key, now)).fetchone()
         
         if row:
-            # Hit-Counter aktualisieren
+            # Update hit counter
             self.db.execute("""
                 UPDATE exact_cache 
                 SET hit_count = hit_count + 1, last_hit_at = ?
@@ -1005,7 +1005,7 @@ class ExactCache:
     
     def set(self, query: str, fingerprint: str, response: dict, 
             response_type: str, ttl_seconds: int):
-        """Speichert Response im Cache"""
+        """Stores response in cache"""
         cache_key = self.get_key(query, fingerprint)
         query_hash = hashlib.sha256(query.encode()).hexdigest()[:16]
         now = datetime.now()
@@ -1023,14 +1023,14 @@ class ExactCache:
         self.db.commit()
     
     def invalidate_by_fingerprint(self, old_fingerprint: str):
-        """Invalidiert alle Einträge mit altem Fingerprint"""
+        """Invalidates all entries with old fingerprint"""
         self.db.execute("""
             DELETE FROM exact_cache WHERE fingerprint = ?
         """, (old_fingerprint,))
         self.db.commit()
     
     def cleanup_expired(self):
-        """Entfernt abgelaufene Einträge"""
+        """Removes expired entries"""
         self.db.execute("""
             DELETE FROM exact_cache WHERE expires_at < ?
         """, (datetime.now(),))
@@ -1046,13 +1046,13 @@ from pathlib import Path
 
 def build_working_tree_fingerprint(project_path: str) -> str:
     """
-    Erstellt Fingerprint aus Git-Status + relevanten Dateien.
-    Änderung im Fingerprint → Cache-Miss (korrekt!).
+    Creates fingerprint from git status + relevant files.
+    Change in fingerprint → Cache miss (correct!).
     """
     components = []
     
     try:
-        # 1. Git HEAD Commit
+        # 1. Git HEAD commit
         head = subprocess.run(
             ["git", "rev-parse", "HEAD"],
             cwd=project_path,
@@ -1062,7 +1062,7 @@ def build_working_tree_fingerprint(project_path: str) -> str:
         if head.returncode == 0:
             components.append(f"head:{head.stdout.strip()[:12]}")
         
-        # 2. Git Diff (staged + unstaged)
+        # 2. Git diff (staged + unstaged)
         diff = subprocess.run(
             ["git", "diff", "--stat", "HEAD"],
             cwd=project_path,
@@ -1073,8 +1073,8 @@ def build_working_tree_fingerprint(project_path: str) -> str:
             diff_hash = hashlib.sha256(diff.stdout.encode()).hexdigest()[:8]
             components.append(f"diff:{diff_hash}")
         
-        # 3. Aktive Dateien (die gerade bearbeitet werden)
-        # Diese Info kommt vom OpenClaw Client
+        # 3. Active files (currently being edited)
+        # This info comes from the OpenClaw client
         active_files = get_active_files_from_context()
         if active_files:
             files_hash = hashlib.sha256(
@@ -1082,7 +1082,7 @@ def build_working_tree_fingerprint(project_path: str) -> str:
             ).hexdigest()[:8]
             components.append(f"active:{files_hash}")
         
-        # 4. Package-Lock (Dependency-Änderungen)
+        # 4. Package lock (dependency changes)
         for lockfile in ["package-lock.json", "yarn.lock", "Cargo.lock", "poetry.lock"]:
             lockpath = Path(project_path) / lockfile
             if lockpath.exists():
@@ -1107,8 +1107,8 @@ from sqlite_utils import Database
 
 class SemanticCache:
     """
-    Semantischer Cache mit Embedding-Similarity.
-    Verwendet lokale BM25 + Remote Embeddings (Fallback).
+    Semantic cache with embedding similarity.
+    Uses local BM25 + remote embeddings (fallback).
     """
     
     def __init__(self, db_path: str = "semantic_cache.sqlite", 
@@ -1116,7 +1116,7 @@ class SemanticCache:
         self.db = Database(db_path)
         self.threshold = similarity_threshold
         
-        # Tabelle für Embeddings
+        # Table for embeddings
         self.db.execute("""
             CREATE TABLE IF NOT EXISTS semantic_cache (
                 id INTEGER PRIMARY KEY,
@@ -1131,12 +1131,12 @@ class SemanticCache:
         """)
     
     async def get(self, query: str, fingerprint: str) -> Optional[dict]:
-        """Sucht semantisch ähnlichen Cache-Eintrag"""
+        """Searches for semantically similar cache entry"""
         
-        # Embedding für Query holen (mit Cache)
+        # Get embedding for query (with cache)
         query_embedding = await self.get_embedding(query)
         
-        # Alle Einträge mit gleichem Fingerprint laden
+        # Load all entries with same fingerprint
         rows = list(self.db.execute("""
             SELECT id, query, query_embedding, response, response_type
             FROM semantic_cache 
@@ -1146,7 +1146,7 @@ class SemanticCache:
         if not rows:
             return None
         
-        # Similarity berechnen
+        # Calculate similarity
         best_match = None
         best_similarity = 0.0
         
@@ -1173,21 +1173,21 @@ class SemanticCache:
         return None
     
     async def get_embedding(self, text: str) -> np.ndarray:
-        """Holt Embedding mit Query-Cache"""
-        # Siehe Abschnitt 9.3 für Query Embedding Cache
+        """Gets embedding with query cache"""
+        # See section 9.3 for Query Embedding Cache
         return await query_embedding_cache.get_or_compute(text)
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
-    """Berechnet Cosine-Similarity zwischen zwei Vektoren"""
+    """Computes cosine similarity between two vectors"""
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 ```
 
 ### 8.5 Event-Driven Cache Invalidation
 
 ```python
-# Git Hook: .git/hooks/post-commit
+# Git hook: .git/hooks/post-commit
 #!/bin/bash
-# Invalidiert Code-bezogene Cache-Einträge nach Commit
+# Invalidates code-related cache entries after commit
 
 COMMIT_HASH=$(git rev-parse HEAD)
 CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
@@ -1203,19 +1203,19 @@ curl -X POST "http://localhost:8000/cache/invalidate" \
 ```
 
 ```python
-# Gateway Endpoint für Invalidation
+# Gateway endpoint for invalidation
 @app.post("/cache/invalidate")
 async def invalidate_cache(event: CacheInvalidationEvent, auth: AuthDep):
-    """Invalidiert Cache basierend auf Events"""
+    """Invalidates cache based on events"""
     
     if event.event == "git_commit":
-        # Alle code_suggestion Einträge invalidieren
+        # Invalidate all code_suggestion entries
         exact_cache.db.execute("""
             DELETE FROM exact_cache 
             WHERE response_type = 'code_suggestion'
         """)
         
-        # Semantic Cache: Nur wenn betroffene Dateien
+        # Semantic cache: Only if affected files
         if event.files:
             semantic_cache.invalidate_by_files(event.files)
         
@@ -1223,7 +1223,7 @@ async def invalidate_cache(event: CacheInvalidationEvent, auth: AuthDep):
         return {"invalidated": True, "reason": "git_commit"}
     
     elif event.event == "manual":
-        # Vollständige Invalidierung
+        # Full invalidation
         exact_cache.db.execute("DELETE FROM exact_cache")
         semantic_cache.db.execute("DELETE FROM semantic_cache")
         return {"invalidated": True, "reason": "manual_full"}
@@ -1236,27 +1236,27 @@ async def invalidate_cache(event: CacheInvalidationEvent, auth: AuthDep):
 ```python
 def get_adaptive_ttl(response_type: str, hit_count: int = 0) -> int:
     """
-    Berechnet TTL basierend auf Response-Type und Popularität.
-    Populäre Einträge leben länger, ungenutzte werden schneller gelöscht.
+    Calculates TTL based on response type and popularity.
+    Popular entries live longer, unused ones are deleted faster.
     """
     base_ttls = {
-        "explanation_generic": 7 * 24 * 3600,    # 7 Tage
-        "explanation_contextual": 24 * 3600,      # 24 Stunden
-        "code_suggestion": 0,                     # Bei Commit invalid
-        "code_review": 12 * 3600,                 # 12 Stunden
-        "command_execution": 3600,                # 1 Stunde
-        "documentation": 24 * 3600,               # 24 Stunden
+        "explanation_generic": 7 * 24 * 3600,    # 7 days
+        "explanation_contextual": 24 * 3600,      # 24 hours
+        "code_suggestion": 0,                     # Invalid on commit
+        "code_review": 12 * 3600,                 # 12 hours
+        "command_execution": 3600,                # 1 hour
+        "documentation": 24 * 3600,               # 24 hours
     }
     
     base = base_ttls.get(response_type, 3600)
     
-    # Popularitäts-Multiplikator
+    # Popularity multiplier
     if hit_count >= 10:
-        return int(base * 2)    # Sehr populär → 2x TTL
+        return int(base * 2)    # Very popular → 2x TTL
     elif hit_count >= 5:
-        return int(base * 1.5)  # Populär → 1.5x TTL
+        return int(base * 1.5)  # Popular → 1.5x TTL
     elif hit_count == 0:
-        return int(base * 0.5)  # Ungenutzt → 0.5x TTL
+        return int(base * 0.5)  # Unused → 0.5x TTL
     
     return base
 ```
@@ -1265,20 +1265,20 @@ def get_adaptive_ttl(response_type: str, hit_count: int = 0) -> int:
 
 ## 9. Hybrid Retrieval (BM25 + Embeddings)
 
-### 9.1 Warum Hybrid?
+### 9.1 Why Hybrid?
 
-| Methode | Stärken | Schwächen |
-|---------|---------|-----------|
-| **BM25 (lokal)** | Exakte Begriffe, IDs, Error-Codes | Keine Semantik |
-| **Embeddings (remote)** | Semantische Ähnlichkeit | Kosten, Latenz, Privacy |
+| Method | Strengths | Weaknesses |
+|--------|-----------|------------|
+| **BM25 (local)** | Exact terms, IDs, error codes | No semantics |
+| **Embeddings (remote)** | Semantic similarity | Cost, latency, privacy |
 
-**Lösung:** BM25 als Fast-Path für 80% der Queries, Remote Embeddings nur als Fallback.
+**Solution:** BM25 as fast path for 80% of queries, remote embeddings only as fallback.
 
-### 9.2 BM25 mit SQLite FTS5
+### 9.2 BM25 with SQLite FTS5
 
 ```python
 class BM25Search:
-    """Lokale Volltextsuche mit SQLite FTS5"""
+    """Local full-text search with SQLite FTS5"""
     
     def __init__(self, db_path: str = "search.sqlite"):
         self.db = sqlite3.connect(db_path)
@@ -1293,7 +1293,7 @@ class BM25Search:
         """)
     
     def search(self, query: str, limit: int = 10) -> list[dict]:
-        """BM25-Suche mit Relevanz-Score"""
+        """BM25 search with relevance score"""
         results = self.db.execute("""
             SELECT doc_id, title, content, doc_type,
                    bm25(documents) as score
@@ -1315,21 +1315,21 @@ class BM25Search:
         ]
     
     def _prepare_query(self, query: str) -> str:
-        """Bereitet Query für FTS5 vor"""
+        """Prepares query for FTS5"""
         # Escape special characters
         query = re.sub(r'[^\w\s-]', ' ', query)
-        # Tokenize und mit OR verbinden
+        # Tokenize and join with OR
         tokens = query.split()
         return " OR ".join(tokens)
 ```
 
-### 9.3 Query Embedding Cache (NEU in v1.3)
+### 9.3 Query Embedding Cache (NEW in v1.3)
 
 ```python
 class QueryEmbeddingCache:
     """
-    Query-Vektoren sind stabil → Cache für 30 Tage.
-    Reduziert Remote-Embedding-Calls um 60-70%.
+    Query vectors are stable → cache for 30 days.
+    Reduces remote embedding calls by 60-70%.
     """
     
     def __init__(self, db_path: str = "query_embeddings.sqlite"):
@@ -1345,13 +1345,13 @@ class QueryEmbeddingCache:
         self.db.commit()
     
     async def get_or_compute(self, query: str) -> np.ndarray:
-        """Holt Embedding aus Cache oder berechnet neu"""
+        """Gets embedding from cache or computes new one"""
         
-        # Normalisiere Query
+        # Normalize query
         normalized = self._normalize(query)
         query_hash = hashlib.sha256(normalized.encode()).hexdigest()[:16]
         
-        # Check Cache
+        # Check cache
         row = self.db.execute("""
             SELECT embedding FROM query_embeddings WHERE query_hash = ?
         """, (query_hash,)).fetchone()
@@ -1360,7 +1360,7 @@ class QueryEmbeddingCache:
             metrics.increment("query_embedding_cache_hit")
             return np.frombuffer(row[0], dtype=np.float32)
         
-        # Compute + Store
+        # Compute + store
         embedding = await self._compute_embedding(query)
         self.db.execute("""
             INSERT OR REPLACE INTO query_embeddings (query_hash, query_normalized, embedding)
@@ -1372,16 +1372,16 @@ class QueryEmbeddingCache:
         return embedding
     
     def _normalize(self, query: str) -> str:
-        """Normalisiert Query für Cache-Key"""
+        """Normalizes query for cache key"""
         # Lowercase, strip, collapse whitespace
         query = query.lower().strip()
         query = re.sub(r'\s+', ' ', query)
-        # Entferne variable IDs (UUIDs, SHAs, etc.)
+        # Remove variable IDs (UUIDs, SHAs, etc.)
         query = re.sub(r'[a-f0-9]{8,}', '<ID>', query)
         return query
     
     async def _compute_embedding(self, text: str) -> np.ndarray:
-        """Berechnet Embedding via OpenAI API"""
+        """Computes embedding via OpenAI API"""
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://api.openai.com/v1/embeddings",
@@ -1395,7 +1395,7 @@ class QueryEmbeddingCache:
             return np.array(data["data"][0]["embedding"], dtype=np.float32)
     
     def cleanup_old(self, days: int = 30):
-        """Entfernt Einträge älter als X Tage"""
+        """Removes entries older than X days"""
         self.db.execute("""
             DELETE FROM query_embeddings 
             WHERE created_at < datetime('now', ?)
@@ -1406,10 +1406,10 @@ class QueryEmbeddingCache:
 query_embedding_cache = QueryEmbeddingCache()
 ```
 
-### 9.4 Fast-Path Detection (NEU in v1.3)
+### 9.4 Fast-Path Detection (NEW in v1.3)
 
 ```python
-# Patterns die BM25 gut matcht
+# Patterns that BM25 matches well
 TECHNICAL_PATTERNS = [
     r'[A-Z]{2,}_[A-Z_]+',           # ERROR_CODE, ECONNREFUSED
     r'[a-f0-9]{7,40}',               # Git SHA, UUIDs
@@ -1423,15 +1423,15 @@ TECHNICAL_PATTERNS = [
 ]
 
 def is_technical_query(query: str) -> bool:
-    """Erkennt technische Queries die BM25 gut findet"""
+    """Detects technical queries that BM25 finds well"""
     return any(re.search(p, query, re.IGNORECASE) for p in TECHNICAL_PATTERNS)
 
 async def hybrid_retrieval(query: str, project_context: dict) -> list[dict]:
     """
-    Hybrid-Retrieval: BM25 Fast-Path + Remote Embeddings Fallback.
+    Hybrid retrieval: BM25 fast path + remote embeddings fallback.
     """
     
-    # FAST PATH: Technische Queries → nur BM25
+    # FAST PATH: Technical queries → BM25 only
     if is_technical_query(query):
         bm25_results = bm25_search.search(query, limit=5)
         
@@ -1440,12 +1440,12 @@ async def hybrid_retrieval(query: str, project_context: dict) -> list[dict]:
             metrics.increment("retrieval_fast_path")
             return bm25_results
     
-    # SLOW PATH: Semantische Queries → Hybrid
+    # SLOW PATH: Semantic queries → Hybrid
     bm25_results = bm25_search.search(query, limit=10)
     
-    # Remote Embeddings nur wenn BM25 schlecht
+    # Remote embeddings only when BM25 is poor
     if not bm25_results or bm25_results[0]["score"] < 5.0:
-        # Content-Filter vor Remote (Privacy)
+        # Content filter before remote (privacy)
         if not contains_sensitive_content(query):
             embedding_results = await embedding_search(query, limit=5)
             return merge_and_rerank(bm25_results, embedding_results)
@@ -1453,7 +1453,7 @@ async def hybrid_retrieval(query: str, project_context: dict) -> list[dict]:
     return bm25_results
 
 def contains_sensitive_content(text: str) -> bool:
-    """Prüft ob Text sensible Daten enthält → kein Remote Embedding"""
+    """Checks if text contains sensitive data → no remote embedding"""
     sensitive_patterns = [
         r'api[_-]?key\s*[=:]',
         r'password\s*[=:]',
@@ -1470,16 +1470,16 @@ def contains_sensitive_content(text: str) -> bool:
 
 ## 10. Anthropic Prompt Caching
 
-### 10.1 Wie es funktioniert
+### 10.1 How It Works
 
-Anthropic cached automatisch identische Prompt-Prefixe. Der System-Prompt wird nur beim ersten Call verarbeitet, danach aus dem Cache geladen.
+Anthropic automatically caches identical prompt prefixes. The system prompt is only processed on the first call, then loaded from cache.
 
-**Preise:**
-| Vorgang | Preis (Sonnet) | vs. Normal |
-|---------|----------------|------------|
-| Schreiben ins Cache | $3.75/1M | +25% |
-| Lesen aus Cache | $0.30/1M | **-90%** |
-| Normal (kein Cache) | $3.00/1M | Baseline |
+**Prices:**
+| Operation | Price (Sonnet) | vs. Normal |
+|-----------|----------------|------------|
+| Write to cache | $3.75/1M | +25% |
+| Read from cache | $0.30/1M | **-90%** |
+| Normal (no cache) | $3.00/1M | Baseline |
 
 ### 10.2 Implementation
 
@@ -1488,19 +1488,19 @@ import anthropic
 
 client = anthropic.Anthropic()
 
-# Statischer System-Prompt (wird gecached)
-STATIC_SYSTEM_PROMPT = """Du bist ein Senior Software Engineer mit Expertise in:
+# Static system prompt (will be cached)
+STATIC_SYSTEM_PROMPT = """You are a senior software engineer with expertise in:
 - Web Development (React, Node.js, Python)
 - DevOps (Docker, Kubernetes, CI/CD)
-- Datenbanken (PostgreSQL, MongoDB, Redis)
+- Databases (PostgreSQL, MongoDB, Redis)
 
-Dein Kommunikationsstil:
-- Präzise und technisch korrekt
-- Code-Beispiele immer als vollständige, lauffähige Snippets
-- Bei Code-Änderungen: Unified Diff Format
-- Bei Unsicherheit: Explizit kommunizieren
+Your communication style:
+- Precise and technically correct
+- Code examples always as complete, runnable snippets
+- For code changes: Unified Diff format
+- When uncertain: Communicate explicitly
 
-Ausgabeformat für Code-Änderungen:
+Output format for code changes:
 ```diff
 --- a/path/to/file
 +++ b/path/to/file
@@ -1511,7 +1511,7 @@ Ausgabeformat für Code-Änderungen:
  context line
 ```
 
-[... weitere 2500 Tokens Anweisungen ...]
+[... additional 2500 tokens of instructions ...]
 """
 
 async def call_premium_with_caching(
@@ -1520,21 +1520,21 @@ async def call_premium_with_caching(
     max_tokens: int = 4096
 ) -> dict:
     """
-    Premium-Call mit Prompt Caching.
-    System-Prompt wird nach erstem Call gecached (90% Rabatt).
+    Premium call with prompt caching.
+    System prompt is cached after first call (90% discount).
     """
     
-    # Dynamischer Kontext in User-Message (NICHT in System-Prompt!)
+    # Dynamic context in user message (NOT in system prompt!)
     user_message = f"""
-Projekt-Kontext:
-- Pfad: {context.get('project_path', 'N/A')}
+Project context:
+- Path: {context.get('project_path', 'N/A')}
 - Framework: {context.get('framework', 'N/A')}
-- Git-Status: {context.get('git_status', 'clean')}
+- Git status: {context.get('git_status', 'clean')}
 
-Aktive Dateien:
-{context.get('active_files_summary', 'Keine')}
+Active files:
+{context.get('active_files_summary', 'None')}
 
-Anfrage:
+Query:
 {user_query}
 """
     
@@ -1545,7 +1545,7 @@ Anfrage:
             {
                 "type": "text",
                 "text": STATIC_SYSTEM_PROMPT,
-                "cache_control": {"type": "ephemeral"}  # WICHTIG!
+                "cache_control": {"type": "ephemeral"}  # IMPORTANT!
             }
         ],
         messages=[
@@ -1553,7 +1553,7 @@ Anfrage:
         ]
     )
     
-    # Cache-Status loggen
+    # Log cache status
     usage = response.usage
     if hasattr(usage, 'cache_read_input_tokens'):
         cache_read = usage.cache_read_input_tokens
@@ -1570,89 +1570,89 @@ Anfrage:
     }
 ```
 
-### 10.3 Kosten-Rechnung
+### 10.3 Cost Calculation
 
 ```python
-# Annahmen:
-# - 30 Premium-Requests/Tag
-# - 3000 Token System-Prompt
-# - 1000 Token User-Message (variabel, nicht gecached)
-# - 2000 Token Output
+# Assumptions:
+# - 30 premium requests/day
+# - 3000 token system prompt
+# - 1000 token user message (variable, not cached)
+# - 2000 token output
 
-# OHNE Prompt Caching:
-system_cost = 3000 * (3.00 / 1_000_000)  # = $0.009 pro Request
-user_cost = 1000 * (3.00 / 1_000_000)    # = $0.003 pro Request
-output_cost = 2000 * (15.00 / 1_000_000) # = $0.030 pro Request
+# WITHOUT prompt caching:
+system_cost = 3000 * (3.00 / 1_000_000)  # = $0.009 per request
+user_cost = 1000 * (3.00 / 1_000_000)    # = $0.003 per request
+output_cost = 2000 * (15.00 / 1_000_000) # = $0.030 per request
 total_per_request = 0.009 + 0.003 + 0.030  # = $0.042
 
 monthly_requests = 30 * 30  # = 900
-monthly_cost_without_cache = 900 * 0.042  # = $37.80/Monat
+monthly_cost_without_cache = 900 * 0.042  # = $37.80/month
 
-# MIT Prompt Caching:
-# Erster Request: Cache-Write ($3.75/1M)
+# WITH prompt caching:
+# First request: Cache write ($3.75/1M)
 first_request_system = 3000 * (3.75 / 1_000_000)  # = $0.01125
 
-# Folgende Requests: Cache-Read ($0.30/1M)
-cached_system_cost = 3000 * (0.30 / 1_000_000)  # = $0.0009 pro Request
+# Subsequent requests: Cache read ($0.30/1M)
+cached_system_cost = 3000 * (0.30 / 1_000_000)  # = $0.0009 per request
 
-# Monatliche Kosten
+# Monthly costs
 first_day_cost = 0.01125 + (29 * 0.0009) + (30 * (0.003 + 0.030))
-# ≈ $1.02 (System) + $0.99 (User+Output)
+# ≈ $1.02 (system) + $0.99 (user+output)
 
 monthly_cost_with_cache = (
-    0.01125 +                    # Erste Cache-Write
-    (899 * 0.0009) +             # Cache-Reads
-    (900 * 0.003) +              # User-Messages
+    0.01125 +                    # First cache write
+    (899 * 0.0009) +             # Cache reads
+    (900 * 0.003) +              # User messages
     (900 * 0.030)                # Outputs
 )
-# = $0.01 + $0.81 + $2.70 + $27.00 = $30.52/Monat
+# = $0.01 + $0.81 + $2.70 + $27.00 = $30.52/month
 
-# Ersparnis: $37.80 - $30.52 = $7.28/Monat (19%)
-# Bei längerem System-Prompt (6000 Tokens): Ersparnis verdoppelt sich!
+# Savings: $37.80 - $30.52 = $7.28/month (19%)
+# With longer system prompt (6000 tokens): Savings double!
 ```
 
 ### 10.4 Best Practices
 
 ```python
-# ✅ RICHTIG: Statischer System-Prompt
-SYSTEM_PROMPT = "Du bist ein Assistent für Web-Development..."
+# ✅ CORRECT: Static system prompt
+SYSTEM_PROMPT = "You are an assistant for web development..."
 
-# ❌ FALSCH: Dynamische Inhalte im System-Prompt (Cache-Miss!)
-SYSTEM_PROMPT = f"Heute ist {date.today()}. Du bist ein Assistent..."
+# ❌ WRONG: Dynamic content in system prompt (cache miss!)
+SYSTEM_PROMPT = f"Today is {date.today()}. You are an assistant..."
 
-# ✅ RICHTIG: Dynamisches in User-Message
-user_message = f"Kontext: Heute ist {date.today()}\n\nFrage: {query}"
+# ✅ CORRECT: Dynamic content in user message
+user_message = f"Context: Today is {date.today()}\n\nQuestion: {query}"
 
-# ✅ RICHTIG: Lange, stabile Anweisungen im System-Prompt
-# ❌ FALSCH: Kurze System-Prompts (wenig Cache-Benefit)
+# ✅ CORRECT: Long, stable instructions in system prompt
+# ❌ WRONG: Short system prompts (little cache benefit)
 ```
 
 ---
 
 ## 11. Context Budgeting & Compression
 
-### 11.1 Token-Budget pro Tier (NEU in v1.3)
+### 11.1 Token Budget per Tier (NEW in v1.3)
 
-| Tier | Max Input | Max Output | Bei Überschreitung |
-|------|-----------|------------|-------------------|
-| **Local** | 4.000 | 2.000 | Truncate + Warning |
-| **Cheap** | 8.000 | 4.000 | Truncate + Warning |
-| **Premium** | 16.000 | 8.000 | Compress + Summarize |
+| Tier | Max Input | Max Output | On Exceeding |
+|------|-----------|------------|--------------|
+| **Local** | 4,000 | 2,000 | Truncate + Warning |
+| **Cheap** | 8,000 | 4,000 | Truncate + Warning |
+| **Premium** | 16,000 | 8,000 | Compress + Summarize |
 
 ### 11.2 Context Budget Implementation
 
 ```python
 import tiktoken
 
-# Token-Encoder für Claude (approximiert mit cl100k_base)
+# Token encoder for Claude (approximated with cl100k_base)
 encoder = tiktoken.get_encoding("cl100k_base")
 
 def estimate_tokens(text: str) -> int:
-    """Schätzt Token-Anzahl"""
+    """Estimates token count"""
     return len(encoder.encode(text))
 
 class ContextBudget:
-    """Begrenzt Context-Größe pro Tier"""
+    """Limits context size per tier"""
     
     LIMITS = {
         "local":   {"input": 4000,  "output": 2000},
@@ -1661,25 +1661,25 @@ class ContextBudget:
     }
     
     def apply(self, tier: str, context: dict) -> dict:
-        """Wendet Budget auf Context an"""
+        """Applies budget to context"""
         limits = self.LIMITS[tier]
         
         total_tokens = 0
         budgeted_context = {}
         
-        # 1. Query immer komplett
+        # 1. Query always complete
         query = context.get("query", "")
         query_tokens = estimate_tokens(query)
         total_tokens += query_tokens
         budgeted_context["query"] = query
         
-        # 2. System-Prompt (bei Premium gecached, zählt trotzdem)
+        # 2. System prompt (cached for premium, still counts)
         system_tokens = estimate_tokens(context.get("system_prompt", ""))
         total_tokens += system_tokens
         
         remaining = limits["input"] - total_tokens
         
-        # 3. Dateien nach Relevanz
+        # 3. Files by relevance
         files = context.get("files", [])
         budgeted_files = []
         
@@ -1690,7 +1690,7 @@ class ContextBudget:
                 budgeted_files.append(file)
                 remaining -= file_tokens
             elif remaining > 500:
-                # Excerpt statt volle Datei
+                # Excerpt instead of full file
                 excerpt = self._extract_relevant(file, context["query"])
                 excerpt_tokens = estimate_tokens(excerpt)
                 if excerpt_tokens <= remaining:
@@ -1703,7 +1703,7 @@ class ContextBudget:
         
         budgeted_context["files"] = budgeted_files
         
-        # 4. Logs komprimieren
+        # 4. Compress logs
         if "logs" in context:
             compressed_logs = self._compress_logs(
                 context["logs"], 
@@ -1714,31 +1714,31 @@ class ContextBudget:
         return budgeted_context
     
     def _extract_relevant(self, file: dict, query: str) -> str:
-        """Extrahiert relevante Code-Abschnitte"""
+        """Extracts relevant code sections"""
         content = file.get("content", "")
         
-        # Finde relevante Funktionen/Klassen
-        # (vereinfachte Implementierung)
+        # Find relevant functions/classes
+        # (simplified implementation)
         lines = content.split("\n")
         relevant_lines = []
         
         for i, line in enumerate(lines):
-            # Suche nach Query-Keywords
+            # Search for query keywords
             if any(kw.lower() in line.lower() for kw in query.split()):
-                # Kontext: 5 Zeilen davor/danach
+                # Context: 5 lines before/after
                 start = max(0, i - 5)
                 end = min(len(lines), i + 6)
                 relevant_lines.extend(lines[start:end])
                 relevant_lines.append("...")
         
         if relevant_lines:
-            return "\n".join(relevant_lines[:100])  # Max 100 Zeilen
+            return "\n".join(relevant_lines[:100])  # Max 100 lines
         
-        # Fallback: Anfang der Datei
+        # Fallback: beginning of file
         return "\n".join(lines[:50])
     
     def _compress_logs(self, logs: str, max_tokens: int) -> str:
-        """Komprimiert Logs für Context"""
+        """Compresses logs for context"""
         return compress_logs_for_context(logs, max_tokens)
 ```
 
@@ -1749,20 +1749,20 @@ import re
 
 def compress_logs_for_context(logs: str, max_tokens: int = 2000) -> str:
     """
-    Komprimiert Logs durch:
-    1. Duplikat-Entfernung
-    2. Timestamp-Normalisierung
-    3. Stack-Trace-Kürzung
-    4. Token-Budget-Trimming
+    Compresses logs through:
+    1. Duplicate removal
+    2. Timestamp normalization
+    3. Stack trace shortening
+    4. Token budget trimming
     """
     lines = logs.split("\n")
     
-    # 1. Duplikate entfernen (häufig bei Retry-Loops)
+    # 1. Remove duplicates (common in retry loops)
     seen = set()
     unique_lines = []
     
     for line in lines:
-        # Normalisiere: Entferne Timestamps, IDs
+        # Normalize: Remove timestamps, IDs
         normalized = re.sub(
             r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[.\d]*Z?',
             '<TIME>',
@@ -1774,35 +1774,35 @@ def compress_logs_for_context(logs: str, max_tokens: int = 2000) -> str:
             seen.add(normalized)
             unique_lines.append(line)
     
-    # 2. Stack-Traces kürzen (nur erste + letzte 3 Frames)
+    # 2. Shorten stack traces (only first + last 3 frames)
     compressed = compress_stacktraces(unique_lines)
     
-    # 3. Auf Token-Budget trimmen
+    # 3. Trim to token budget
     result = "\n".join(compressed)
     while estimate_tokens(result) > max_tokens and compressed:
-        compressed = compressed[1:]  # Älteste Zeile entfernen
+        compressed = compressed[1:]  # Remove oldest line
         result = "\n".join(compressed)
     
     return result
 
 def compress_stacktraces(lines: list[str]) -> list[str]:
-    """Kürzt Stack-Traces auf wesentliche Frames"""
+    """Shortens stack traces to essential frames"""
     result = []
     in_stacktrace = False
     stack_buffer = []
     
     for line in lines:
-        # Erkennung: Stack-Trace Anfang
+        # Detection: Stack trace start
         if re.match(r'\s*(at |File "|Traceback)', line):
             in_stacktrace = True
             stack_buffer.append(line)
             continue
         
-        # Ende des Stack-Traces
+        # End of stack trace
         if in_stacktrace and not re.match(r'\s*(at |File "|\s+\^)', line):
             in_stacktrace = False
             
-            # Nur erste 3 + letzte 3 Frames
+            # Only first 3 + last 3 frames
             if len(stack_buffer) > 6:
                 result.extend(stack_buffer[:3])
                 result.append(f"    ... ({len(stack_buffer) - 6} frames omitted)")
@@ -1824,22 +1824,22 @@ def compress_stacktraces(lines: list[str]) -> list[str]:
 
 ## 12. Capability-based Tools
 
-### 12.1 Drei-Zonen-Modell
+### 12.1 Three-Zone Model
 
-| Zone | Pfade | KI-Autonomie | Confirm? |
-|------|-------|--------------|----------|
-| **App/Projekt** | /srv/projects/*, dist, .cache | ✅ Voll | Nein |
-| **User/Runtime** | $HOME/.local, venv, docker | ⚠️ Eingeschränkt | Bei Schreiben |
-| **System** | /etc, /usr, /var/lib, systemd | ❌ Blockiert | Immer |
+| Zone | Paths | AI Autonomy | Confirm? |
+|------|-------|-------------|----------|
+| **App/Project** | /srv/projects/*, dist, .cache | ✅ Full | No |
+| **User/Runtime** | $HOME/.local, venv, docker | ⚠️ Restricted | On write |
+| **System** | /etc, /usr, /var/lib, systemd | ❌ Blocked | Always |
 
-### 12.2 Tool-Definitionen
+### 12.2 Tool Definitions
 
 ```python
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 from pathlib import Path
 
-# Definierte Roots für verschiedene Operationen
+# Defined roots for different operations
 DELETABLE_ROOTS = [
     "/srv/projects/*/tmp/",
     "/srv/projects/*/dist/",
@@ -1858,13 +1858,13 @@ FORBIDDEN_PATHS = [
 ]
 
 class FSDeleteInput(BaseModel):
-    """Input für fs_delete Tool"""
-    path: str = Field(..., description="Pfad zum Löschen")
-    recursive: bool = Field(False, description="Rekursiv löschen")
-    dry_run: bool = Field(True, description="Nur simulieren")
+    """Input for fs_delete tool"""
+    path: str = Field(..., description="Path to delete")
+    recursive: bool = Field(False, description="Delete recursively")
+    dry_run: bool = Field(True, description="Simulate only")
 
 class FSDeleteResult(BaseModel):
-    """Ergebnis von fs_delete"""
+    """Result of fs_delete"""
     success: bool
     deleted_count: int
     total_size_bytes: int
@@ -1874,12 +1874,12 @@ class FSDeleteResult(BaseModel):
 
 async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
     """
-    Sicheres Löschen mit Trash-Retention.
-    Nur in erlaubten Pfaden, mit Audit-Log.
+    Safe deletion with trash retention.
+    Only in allowed paths, with audit log.
     """
     path = Path(input.path).resolve()
     
-    # 1. Prüfe gegen Forbidden Paths
+    # 1. Check against forbidden paths
     for pattern in FORBIDDEN_PATHS:
         if path.match(pattern):
             return FSDeleteResult(
@@ -1891,7 +1891,7 @@ async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
                 error=f"Forbidden path: {pattern}"
             )
     
-    # 2. Prüfe gegen Deletable Roots
+    # 2. Check against deletable roots
     allowed = False
     for root_pattern in DELETABLE_ROOTS:
         if path.match(root_pattern.replace("*", "**")):
@@ -1908,7 +1908,7 @@ async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
             error=f"Path not in deletable roots"
         )
     
-    # 3. Sammle Dateien
+    # 3. Collect files
     if input.recursive and path.is_dir():
         files = list(path.rglob("*"))
     elif path.is_file():
@@ -1919,7 +1919,7 @@ async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
     total_size = sum(f.stat().st_size for f in files if f.is_file())
     sample = [str(f) for f in files[:5]]
     
-    # 4. Dry-Run oder echtes Löschen
+    # 4. Dry run or actual deletion
     if input.dry_run:
         return FSDeleteResult(
             success=True,
@@ -1929,14 +1929,14 @@ async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
             dry_run=True
         )
     
-    # 5. Move to Trash (7 Tage Retention)
+    # 5. Move to trash (7-day retention)
     trash_path = Path(f"/srv/trash/{datetime.now().strftime('%Y%m%d')}")
     trash_path.mkdir(parents=True, exist_ok=True)
     
     import shutil
     shutil.move(str(path), str(trash_path / path.name))
     
-    # 6. Audit Log
+    # 6. Audit log
     log.info(f"fs_delete: {path} → {trash_path}, {len(files)} files, {total_size} bytes")
     
     return FSDeleteResult(
@@ -1948,12 +1948,12 @@ async def fs_delete(input: FSDeleteInput) -> FSDeleteResult:
     )
 ```
 
-### 12.3 Cleanup-Policies
+### 12.3 Cleanup Policies
 
 ```python
 CLEANUP_POLICIES = {
     "node_cache_v1": {
-        "description": "Node.js Build-Cache bereinigen",
+        "description": "Clean Node.js build cache",
         "targets": [
             "node_modules/.cache/**",
             ".next/cache/**",
@@ -1963,7 +1963,7 @@ CLEANUP_POLICIES = {
         "min_age_days": 0,
     },
     "build_artifacts_v1": {
-        "description": "Build-Artefakte älter als 7 Tage",
+        "description": "Build artifacts older than 7 days",
         "targets": [
             "dist/**",
             "build/**",
@@ -1974,18 +1974,18 @@ CLEANUP_POLICIES = {
         "min_age_days": 7,
     },
     "docker_cache_v1": {
-        "description": "Docker Build-Cache und dangling Images",
+        "description": "Docker build cache and dangling images",
         "commands": [
             "docker image prune -f",
             "docker builder prune -f --filter until=168h",
         ],
         "max_size_mb": 20000,
-        "requires_confirm": True,  # Immer User-Bestätigung!
+        "requires_confirm": True,  # Always requires user confirmation!
     },
 }
 
 async def cleanup_project(project_id: str, policy_name: str, dry_run: bool = True):
-    """Führt Cleanup-Policy aus"""
+    """Executes cleanup policy"""
     
     if policy_name not in CLEANUP_POLICIES:
         raise ValueError(f"Unknown policy: {policy_name}")
@@ -2022,25 +2022,25 @@ async def cleanup_project(project_id: str, policy_name: str, dry_run: bool = Tru
         "dry_run": dry_run,
         "files_affected": len(results),
         "total_size_mb": sum(r["size"] for r in results) / (1024 * 1024),
-        "details": results[:20]  # Nur erste 20 für Übersicht
+        "details": results[:20]  # Only first 20 for overview
     }
 ```
 
 ---
 
-## 13. Deterministisches Patching
+## 13. Deterministic Patching
 
-### 13.1 Warum Deterministisch?
+### 13.1 Why Deterministic?
 
-LLMs sind nicht-deterministisch → gleiche Anfrage kann unterschiedliche Patches erzeugen.
-**Problem:** Bei erneutem Ausführen passt der Patch evtl. nicht mehr zum Code.
+LLMs are non-deterministic → the same request can produce different patches.
+**Problem:** When re-executing, the patch may no longer match the code.
 
-**Lösung:**
-1. **Fingerprint** erfasst den exakten Code-Zustand
-2. **Verifier** prüft ob Patch noch passt
-3. **Transaction-Pattern** macht Patches atomar
+**Solution:**
+1. **Fingerprint** captures the exact code state
+2. **Verifier** checks if patch still applies
+3. **Transaction pattern** makes patches atomic
 
-### 13.2 Patch-Format: Unified Diff
+### 13.2 Patch Format: Unified Diff
 
 ```python
 from dataclasses import dataclass
@@ -2059,7 +2059,7 @@ class Patch:
     author: str = "llm-gateway"
 
 def parse_unified_diff(diff_text: str) -> Patch:
-    """Parst Unified Diff in strukturiertes Format"""
+    """Parses unified diff into structured format"""
     import unidiff
     
     patchset = unidiff.PatchSet.from_string(diff_text)
@@ -2078,7 +2078,7 @@ def parse_unified_diff(diff_text: str) -> Patch:
         
         files.append(PatchFile(
             path=patched_file.path,
-            old_content="",  # Wird später geladen
+            old_content="",  # Loaded later
             new_content="",
             hunks=hunks
         ))
@@ -2086,7 +2086,7 @@ def parse_unified_diff(diff_text: str) -> Patch:
     return Patch(files=files, description="")
 ```
 
-### 13.3 Transaction-Pattern
+### 13.3 Transaction Pattern
 
 ```python
 import shutil
@@ -2095,8 +2095,8 @@ from contextlib import contextmanager
 @contextmanager
 def patch_transaction(project_path: str):
     """
-    Atomares Anwenden von Patches mit Rollback.
-    Bei Fehler: Alle Änderungen werden rückgängig gemacht.
+    Atomic patch application with rollback.
+    On error: All changes are reverted.
     """
     backup_path = f"{project_path}/.patch-backup-{datetime.now().timestamp()}"
     changed_files = []
@@ -2104,14 +2104,14 @@ def patch_transaction(project_path: str):
     try:
         yield PatchContext(project_path, backup_path, changed_files)
         
-        # Commit: Backup löschen
+        # Commit: Delete backup
         if os.path.exists(backup_path):
             shutil.rmtree(backup_path)
         
         log.info(f"Patch committed: {len(changed_files)} files changed")
         
     except Exception as e:
-        # Rollback: Alle Dateien aus Backup wiederherstellen
+        # Rollback: Restore all files from backup
         log.error(f"Patch failed, rolling back: {e}")
         
         for file_path in changed_files:
@@ -2131,28 +2131,28 @@ class PatchContext:
         self.changed_files = changed_files
     
     def modify_file(self, relative_path: str, new_content: str):
-        """Modifiziert Datei mit automatischem Backup"""
+        """Modifies file with automatic backup"""
         full_path = os.path.join(self.project_path, relative_path)
         backup_file = os.path.join(self.backup_path, relative_path)
         
-        # Backup erstellen
+        # Create backup
         os.makedirs(os.path.dirname(backup_file), exist_ok=True)
         if os.path.exists(full_path):
             shutil.copy2(full_path, backup_file)
         
-        # Datei ändern
+        # Modify file
         with open(full_path, 'w') as f:
             f.write(new_content)
         
         self.changed_files.append(full_path)
 
-# Verwendung
+# Usage
 async def apply_patch_safely(project_path: str, patch: Patch):
-    """Wendet Patch mit Transaction-Pattern an"""
+    """Applies patch with transaction pattern"""
     
     with patch_transaction(project_path) as ctx:
         for file_change in patch.files:
-            # Lade aktuellen Inhalt
+            # Load current content
             full_path = os.path.join(project_path, file_change.path)
             
             if os.path.exists(full_path):
@@ -2161,10 +2161,10 @@ async def apply_patch_safely(project_path: str, patch: Patch):
             else:
                 current_content = ""
             
-            # Wende Hunks an
+            # Apply hunks
             new_content = apply_hunks(current_content, file_change.hunks)
             
-            # Schreibe mit Backup
+            # Write with backup
             ctx.modify_file(file_change.path, new_content)
     
     return {"success": True, "files_changed": len(patch.files)}
@@ -2174,16 +2174,16 @@ async def apply_patch_safely(project_path: str, patch: Patch):
 
 ## 14. Patch Risk Score
 
-### 14.1 Warum Risk Score statt fixer Limits?
+### 14.1 Why Risk Score Instead of Fixed Limits?
 
-v1.2 nutzte fixes Maximum (300 Lines). Problem: 
-- Blockt legitime Refactorings
-- Erlaubt gefährliche kleine Änderungen (z.B. in auth/)
+v1.2 used a fixed maximum (300 lines). Problem:
+- Blocks legitimate refactorings
+- Allows dangerous small changes (e.g., in auth/)
 
-**v1.3 Lösung:** Gewichteter Risk Score basierend auf:
-- Pfad-Risiko (auth/, payment/, etc.)
-- Dateityp-Risiko (.sql, .env, etc.)
-- Change-Ratio (% der Datei geändert)
+**v1.3 Solution:** Weighted risk score based on:
+- Path risk (auth/, payment/, etc.)
+- File type risk (.sql, .env, etc.)
+- Change ratio (% of file changed)
 
 ### 14.2 Risk Score Implementation
 
@@ -2227,12 +2227,12 @@ class PatchRiskResult:
 
 def calculate_patch_risk(diff: Patch) -> PatchRiskResult:
     """
-    Berechnet Risk Score für einen Patch.
+    Calculates risk score for a patch.
     
-    Score-Interpretation:
-    - 0-7:   Low Risk → Auto-Apply erlaubt
-    - 8-14:  Medium Risk → Apply mit Review-Flag
-    - 15+:   High Risk → Blockiert
+    Score interpretation:
+    - 0-7:   Low Risk → Auto-apply allowed
+    - 8-14:  Medium Risk → Apply with review flag
+    - 15+:   High Risk → Blocked
     """
     score = 0
     reasons = []
@@ -2240,19 +2240,19 @@ def calculate_patch_risk(diff: Patch) -> PatchRiskResult:
     for file in diff.files:
         path_lower = file.path.lower()
         
-        # Pfad-Risiko
+        # Path risk
         for pattern, weight in HIGH_RISK_PATHS.items():
             if pattern in path_lower:
                 score += weight
                 reasons.append(f"high_risk_path:{pattern}")
         
-        # Extension-Risiko
+        # Extension risk
         for ext, weight in HIGH_RISK_EXTENSIONS.items():
             if path_lower.endswith(ext) or ext in path_lower:
                 score += weight
                 reasons.append(f"high_risk_extension:{ext}")
         
-        # Change-Ratio Risiko
+        # Change ratio risk
         if file.old_content:
             total_lines = len(file.old_content.split("\n"))
             changed_lines = sum(len(h.get("content", "").split("\n")) for h in file.hunks)
@@ -2266,7 +2266,7 @@ def calculate_patch_risk(diff: Patch) -> PatchRiskResult:
                     score += 3
                     reasons.append(f"medium_change_ratio:{ratio:.0%}")
     
-    # Anzahl Dateien
+    # Number of files
     if len(diff.files) > 10:
         score += 3
         reasons.append(f"many_files:{len(diff.files)}")
@@ -2280,10 +2280,10 @@ def calculate_patch_risk(diff: Patch) -> PatchRiskResult:
 
 def validate_patch_scope(diff: Patch) -> tuple[bool, str]:
     """
-    Validiert Patch gegen Hard-Limits.
+    Validates patch against hard limits.
     Returns: (allowed, reason)
     """
-    # Absolut verbotene Pfade
+    # Absolutely forbidden paths
     forbidden = ["/etc/", "/.env", "/.ssh/", "*.pem", "*.key", "id_rsa"]
     
     for file in diff.files:
@@ -2294,7 +2294,7 @@ def validate_patch_scope(diff: Patch) -> tuple[bool, str]:
             elif pattern in file.path:
                 return False, f"Forbidden path: {pattern}"
     
-    # Risk Score prüfen
+    # Check risk score
     risk = calculate_patch_risk(diff)
     if not risk.allowed:
         return False, f"Risk score too high: {risk.score} ({', '.join(risk.reasons)})"
@@ -2306,17 +2306,17 @@ def validate_patch_scope(diff: Patch) -> tuple[bool, str]:
 
 ## 15. Risk-Stratified Verifier
 
-### 15.1 Warum nicht immer verifizieren?
+### 15.1 Why Not Always Verify?
 
-v1.2 rief Haiku-Verifier bei **jedem** Semantic Cache Hit.
-**Problem:** 
-- Kosten (auch wenn gering: $0.0003/Call)
-- Latenz (+300-500ms)
-- Unnötig für Low-Risk Response-Types
+v1.2 called the Haiku verifier on **every** semantic cache hit.
+**Problem:**
+- Cost (even if small: $0.0003/call)
+- Latency (+300-500ms)
+- Unnecessary for low-risk response types
 
-**v1.3 Lösung:** Verifier nur bei tatsächlichem Risiko.
+**v1.3 Solution:** Verifier only when there's actual risk.
 
-### 15.2 Verifier-Entscheidungsbaum
+### 15.2 Verifier Decision Tree
 
 ```python
 def should_verify_cache_hit(
@@ -2326,21 +2326,21 @@ def should_verify_cache_hit(
     file_touched: bool = False
 ) -> tuple[bool, str]:
     """
-    Entscheidet ob Verifier nötig ist.
+    Decides whether verifier is needed.
     
     Returns: (should_verify, reason)
     """
     
-    # HIGH RISK: Immer verifizieren
+    # HIGH RISK: Always verify
     HIGH_RISK_TYPES = ["code_patch", "command_execution", "code_suggestion"]
     if response_type in HIGH_RISK_TYPES:
         return True, "high_risk_response_type"
     
-    # Fingerprint unverändert → Sehr sicher
+    # Fingerprint unchanged → Very safe
     if not fingerprint_changed:
         return False, "fingerprint_unchanged"
     
-    # MEDIUM RISK: Nur bei niedriger Similarity oder File-Änderung
+    # MEDIUM RISK: Only with low similarity or file change
     MEDIUM_RISK_TYPES = ["explanation_contextual", "code_review"]
     if response_type in MEDIUM_RISK_TYPES:
         if similarity < 0.97:
@@ -2349,12 +2349,12 @@ def should_verify_cache_hit(
             return True, "contextual_file_changed"
         return False, "contextual_high_similarity"
     
-    # LOW RISK: Nie verifizieren
+    # LOW RISK: Never verify
     LOW_RISK_TYPES = ["explanation_generic", "documentation"]
     if response_type in LOW_RISK_TYPES:
         return False, "generic_always_safe"
     
-    # Unknown → Sicherheitshalber verifizieren
+    # Unknown → Verify as safety measure
     return True, "unknown_response_type"
 ```
 
@@ -2368,7 +2368,7 @@ async def verify_cache_hit(
     query: str
 ) -> dict:
     """
-    Verifiziert ob gecachte Antwort noch gültig ist.
+    Verifies whether cached response is still valid.
     
     Returns: {
         "verdict": "VALID" | "INVALID",
@@ -2378,7 +2378,7 @@ async def verify_cache_hit(
     }
     """
     
-    # Quick-Check: Fingerprint identisch → Immer valid
+    # Quick check: Fingerprint identical → Always valid
     if current_fingerprint == original_fingerprint:
         return {
             "verdict": "VALID",
@@ -2386,25 +2386,25 @@ async def verify_cache_hit(
             "confidence": 1.0
         }
     
-    # Haiku-Verifier für komplexe Prüfung
-    verification_prompt = f"""Prüfe ob diese Antwort noch korrekt ist:
+    # Haiku verifier for complex checks
+    verification_prompt = f"""Check whether this response is still correct:
 
-URSPRÜNGLICHE ANFRAGE:
+ORIGINAL QUERY:
 {query}
 
-GECACHTE ANTWORT:
+CACHED RESPONSE:
 {json.dumps(cached_response.get('content', ''), indent=2)[:2000]}
 
-KONTEXT-ÄNDERUNGEN:
-- Alter Fingerprint: {original_fingerprint}
-- Neuer Fingerprint: {current_fingerprint}
+CONTEXT CHANGES:
+- Old fingerprint: {original_fingerprint}
+- New fingerprint: {current_fingerprint}
 
-Antworte NUR mit JSON:
+Reply ONLY with JSON:
 {{
-    "verdict": "VALID" oder "INVALID",
+    "verdict": "VALID" or "INVALID",
     "reason": "context_unchanged|version_mismatch|missing_files|code_changed|security_risk",
     "confidence": 0.0-1.0,
-    "suggestion": "Optional: Was neu generiert werden sollte"
+    "suggestion": "Optional: What should be regenerated"
 }}"""
 
     response = await haiku_client.messages.create(
@@ -2422,7 +2422,7 @@ Antworte NUR mit JSON:
             "suggestion": result.get("suggestion")
         }
     except json.JSONDecodeError:
-        # Fallback bei Parse-Fehler
+        # Fallback on parse error
         return {
             "verdict": "INVALID",
             "reason": "verifier_parse_error",
@@ -2436,18 +2436,18 @@ Antworte NUR mit JSON:
 ```python
 async def two_stage_verify(cached: dict, fingerprint_current: str, fingerprint_cached: str) -> dict:
     """
-    Zweistufige Verifikation:
-    1. Lokale Heuristiken (schnell, kostenlos)
-    2. LLM-Verifier (nur wenn nötig)
+    Two-stage verification:
+    1. Local heuristics (fast, free)
+    2. LLM verifier (only when needed)
     """
     
-    # STAGE 1: Lokale Heuristiken
+    # STAGE 1: Local heuristics
     
-    # 1a. Fingerprint identisch → VALID
+    # 1a. Fingerprint identical → VALID
     if fingerprint_current == fingerprint_cached:
         return {"verdict": "VALID", "reason": "fingerprint_match", "stage": 1}
     
-    # 1b. Nur Timestamp-Diff → wahrscheinlich VALID
+    # 1b. Only timestamp diff → probably VALID
     fp_current = parse_fingerprint(fingerprint_current)
     fp_cached = parse_fingerprint(fingerprint_cached)
     
@@ -2455,11 +2455,11 @@ async def two_stage_verify(cached: dict, fingerprint_current: str, fingerprint_c
         if fp_current.get("diff") == fp_cached.get("diff"):
             return {"verdict": "VALID", "reason": "same_head_and_diff", "stage": 1}
     
-    # 1c. Response-Type prüfen
+    # 1c. Check response type
     if cached.get("response_type") == "explanation_generic":
         return {"verdict": "VALID", "reason": "generic_always_valid", "stage": 1}
     
-    # STAGE 2: LLM-Verifier (nur für unsichere Fälle)
+    # STAGE 2: LLM verifier (only for uncertain cases)
     return await verify_cache_hit(cached, fingerprint_current, fingerprint_cached, cached.get("query", ""))
 ```
 
@@ -2467,28 +2467,28 @@ async def two_stage_verify(cached: dict, fingerprint_current: str, fingerprint_c
 
 ## 16. Monitoring & KPIs
 
-### 16.1 Vollständige KPI-Tabelle
+### 16.1 Complete KPI Table
 
-| Metrik | Beschreibung | Ziel | Warnung | Kritisch | Aktion |
-|--------|--------------|------|---------|----------|--------|
-| `daily_cost_usd` | Tägliche API-Kosten | <$2 | >$5 | >$15 | Throttle/Kill |
-| `groq_latency_p95_ms` | Router-Latenz (95. Perzentil) | <300 | >500 | >1000 | Fallback Haiku |
-| `cache_hit_rate_total` | Gesamt-Cache-Hit-Rate | >40% | <25% | <15% | Cache-Config |
-| `exact_cache_hit_rate` | Exact Cache Hit-Rate | >25% | <10% | <5% | Key-Format |
-| `semantic_cache_hit_rate` | Semantic Cache Hit-Rate | >15% | <5% | <2% | Threshold |
-| `premium_ratio` | Anteil Premium-Requests | <25% | >35% | >50% | Router tunen |
-| `verifier_skip_rate` | Verifier-Skips (Risk-Based) | >50% | <30% | N/A | Risk-Config |
-| `verifier_reject_rate` | Verifier-Rejections | <20% | >40% | >60% | Threshold |
-| `context_compression_ratio` | Kontext-Kompression | >30% | <15% | N/A | Pipeline |
-| `idempotency_hit_rate` | Doppelte Requests | <5% | >10% | >20% | Client-Bug? |
-| `patch_success_rate` | Erfolgreiche Patches | >90% | <75% | <50% | Diff-Format |
-| `patch_high_risk_rate` | High-Risk Patches | <10% | >20% | >30% | Review |
-| `policy_block_rate` | Hard-Policy Blocks | Log | >5% | >10% | Injection? |
-| `rate_limit_hits` | Rate-Limit Treffer | <5% | >15% | >25% | Limits |
-| `cache_size_mb` | Cache-Größe | <500 | >800 | >1000 | Eviction |
-| `query_embedding_cache_hit` | Query-Embedding Cache | >60% | <40% | <20% | TTL |
+| Metric | Description | Target | Warning | Critical | Action |
+|--------|-------------|--------|---------|----------|--------|
+| `daily_cost_usd` | Daily API costs | <$2 | >$5 | >$15 | Throttle/Kill |
+| `groq_latency_p95_ms` | Router latency (95th percentile) | <300 | >500 | >1000 | Fallback Haiku |
+| `cache_hit_rate_total` | Total cache hit rate | >40% | <25% | <15% | Cache config |
+| `exact_cache_hit_rate` | Exact cache hit rate | >25% | <10% | <5% | Key format |
+| `semantic_cache_hit_rate` | Semantic cache hit rate | >15% | <5% | <2% | Threshold |
+| `premium_ratio` | Share of premium requests | <25% | >35% | >50% | Tune router |
+| `verifier_skip_rate` | Verifier skips (risk-based) | >50% | <30% | N/A | Risk config |
+| `verifier_reject_rate` | Verifier rejections | <20% | >40% | >60% | Threshold |
+| `context_compression_ratio` | Context compression | >30% | <15% | N/A | Pipeline |
+| `idempotency_hit_rate` | Duplicate requests | <5% | >10% | >20% | Client bug? |
+| `patch_success_rate` | Successful patches | >90% | <75% | <50% | Diff format |
+| `patch_high_risk_rate` | High-risk patches | <10% | >20% | >30% | Review |
+| `policy_block_rate` | Hard policy blocks | Log | >5% | >10% | Injection? |
+| `rate_limit_hits` | Rate limit hits | <5% | >15% | >25% | Limits |
+| `cache_size_mb` | Cache size | <500 | >800 | >1000 | Eviction |
+| `query_embedding_cache_hit` | Query embedding cache | >60% | <40% | <20% | TTL |
 
-### 16.2 Alerting-Regeln
+### 16.2 Alerting Rules
 
 ```python
 ALERT_RULES = {
@@ -2583,20 +2583,20 @@ active_requests = Gauge(
 
 ---
 
-## 17. Implementierungsplan
+## 17. Implementation Plan
 
-### 17.1 Phase 1: Infrastruktur + Basis (Tage 1-3)
+### 17.1 Phase 1: Infrastructure + Basics (Days 1-3)
 
-| Tag | Aufgabe | Deliverable | Go/No-Go |
-|-----|---------|-------------|----------|
-| 1 | Hetzner CX22 bestellen, Ubuntu Setup, Firewall, SSH | Server erreichbar | SSH funktioniert |
-| 2 | FastAPI Skeleton, Groq Router, Hard Policy Gate | `/health` + `/route` Endpoints | Routing funktioniert |
-| 3 | Rate Limiting, Kill Switch, Idempotency | Budget-System aktiv | Cap bei $5 greift |
+| Day | Task | Deliverable | Go/No-Go |
+|-----|------|-------------|----------|
+| 1 | Order 4GB VPS, Ubuntu setup, firewall, SSH | Server reachable | SSH works |
+| 2 | FastAPI skeleton, Groq router, Hard Policy Gate | `/health` + `/route` endpoints | Routing works |
+| 3 | Rate limiting, kill switch, idempotency | Budget system active | Cap at $5 triggers |
 
-**Tag 1 Commands:**
+**Day 1 Commands:**
 ```bash
-# Hetzner Cloud Console: CX22 mit Ubuntu 24.04
-# DNS: gateway.yourdomain.com → Server-IP
+# Order a 4GB VPS with Ubuntu 24.04 from your provider
+# DNS: gateway.yourdomain.com → Server IP
 
 ssh root@<ip>
 apt update && apt upgrade -y
@@ -2604,7 +2604,7 @@ apt install -y python3-pip python3-venv nginx certbot python3-certbot-nginx
 ufw allow 22,80,443/tcp && ufw enable
 ```
 
-**Tag 2 Skeleton:**
+**Day 2 Skeleton:**
 ```python
 # main.py
 from fastapi import FastAPI, HTTPException
@@ -2637,222 +2637,222 @@ async def chat_completions(request: ChatRequest):
     ...
 ```
 
-### 17.2 Phase 2: Caching + Premium (Tage 4-7)
+### 17.2 Phase 2: Caching + Premium (Days 4-7)
 
-| Tag | Aufgabe | Deliverable | Go/No-Go |
-|-----|---------|-------------|----------|
-| 4 | BM25 (FTS5), Query Embedding Cache | Retrieval funktioniert | Fast-Path aktiv |
-| 5 | Anthropic Prompt Caching aktivieren | Cache-Headers in Logs | Cache-Read >0 |
-| 6 | Semantic Cache + Risk-Stratified Verifier | Verifier-Skips in Logs | Skip-Rate >50% |
-| 7 | Context Budgeting + Log Compression | Compression in Logs | Ratio >30% |
+| Day | Task | Deliverable | Go/No-Go |
+|-----|------|-------------|----------|
+| 4 | BM25 (FTS5), query embedding cache | Retrieval works | Fast path active |
+| 5 | Activate Anthropic prompt caching | Cache headers in logs | Cache read >0 |
+| 6 | Semantic cache + risk-stratified verifier | Verifier skips in logs | Skip rate >50% |
+| 7 | Context budgeting + log compression | Compression in logs | Ratio >30% |
 
-**Tag 5: Prompt Caching aktivieren**
+**Day 5: Activate Prompt Caching**
 ```python
-# Nur diese Änderung nötig:
+# Only this change needed:
 response = client.messages.create(
     model="claude-sonnet-4-20250514",
     system=[{
         "type": "text",
         "text": STATIC_SYSTEM_PROMPT,
-        "cache_control": {"type": "ephemeral"}  # <-- Diese Zeile!
+        "cache_control": {"type": "ephemeral"}  # <-- This line!
     }],
     messages=[...]
 )
 
-# Logging zum Verifizieren:
+# Logging to verify:
 usage = response.usage
 log.info(f"Cache: read={usage.cache_read_input_tokens}, write={usage.cache_creation_input_tokens}")
 ```
 
-### 17.3 Phase 3: Tools + Hardening (Tage 8-10)
+### 17.3 Phase 3: Tools + Hardening (Days 8-10)
 
-| Tag | Aufgabe | Deliverable | Go/No-Go |
-|-----|---------|-------------|----------|
-| 8 | Capability Tools, Patch Risk Score | Tools funktionieren | High-Risk blocked |
-| 9 | Monitoring Dashboard, Alerting | Grafana/Prometheus | Alerts funktionieren |
-| 10 | 24h Lasttest, Kosten-Audit | Test-Report | <€1 für Test-Tag |
+| Day | Task | Deliverable | Go/No-Go |
+|-----|------|-------------|----------|
+| 8 | Capability tools, patch risk score | Tools work | High-risk blocked |
+| 9 | Monitoring dashboard, alerting | Grafana/Prometheus | Alerts work |
+| 10 | 24h load test, cost audit | Test report | <€1 for test day |
 
-**Tag 10: Lasttest**
+**Day 10: Load Test**
 ```bash
-# Simuliere 500 Requests über 24h
+# Simulate 500 requests over 24h
 for i in {1..500}; do
   curl -X POST https://gateway.yourdomain.com/v1/chat/completions \
     -H "Authorization: Bearer $TOKEN" \
     -d '{"messages":[{"role":"user","content":"Explain async/await in JavaScript"}]}'
-  sleep 172  # ~500 Requests in 24h
+  sleep 172  # ~500 requests in 24h
 done
 
-# Erwartete Kosten:
-# - 400 Cache-Hits → $0
-# - 80 Cheap (Haiku) → $0.02
-# - 20 Premium (mit Caching) → $0.60
-# TOTAL: ~$0.62 für 500 Requests
+# Expected costs:
+# - 400 cache hits → $0
+# - 80 cheap (Haiku) → $0.02
+# - 20 premium (with caching) → $0.60
+# TOTAL: ~$0.62 for 500 requests
 ```
 
-### 17.4 Phase 4: Beta + Production (Tage 11-14)
+### 17.4 Phase 4: Beta + Production (Days 11-14)
 
-| Tag | Aufgabe | Deliverable |
-|-----|---------|-------------|
-| 11 | Beta-Rollout (10% Traffic) | Monitoring aktiv |
-| 12 | Feedback sammeln, Feintuning | Anpassungen dokumentiert |
-| 13 | Rollout auf 50%, dann 100% | Production Traffic |
-| 14 | Dokumentation, Runbook | Operations-Guide |
+| Day | Task | Deliverable |
+|-----|------|-------------|
+| 11 | Beta rollout (10% traffic) | Monitoring active |
+| 12 | Collect feedback, fine-tuning | Adjustments documented |
+| 13 | Rollout to 50%, then 100% | Production traffic |
+| 14 | Documentation, runbook | Operations guide |
 
 ---
 
-## 18. Kostenprognose
+## 18. Cost Forecast
 
-### 18.1 Detaillierte Aufschlüsselung
+### 18.1 Detailed Breakdown
 
-| Komponente | Berechnung | Monatlich |
-|------------|------------|-----------|
-| **Hetzner CX22** | €4,35 fix | €4,35 |
-| **Groq Router** | 15.000 Req × 300 Tok × $0.05/1M | €0,25 |
-| **Embeddings** | 5.000 Queries × $0.02/1K Tok | €1,00 |
-| **Haiku (Cheap)** | 10.000 Req × 2K Tok × $0.25/1M | €5,00 |
-| **Haiku (Verifier)** | 2.000 Calls × 500 Tok × $0.25/1M | €0,25 |
-| **Sonnet (Premium)** | 3.000 Req × 4K Tok × $3/1M (Input) | €3,60 |
-| **Sonnet (Premium)** | 3.000 Req × 2K Tok × $15/1M (Output) | €9,00 |
-| **Prompt Cache Rabatt** | 3.000 Req × 3K Tok × ($3-$0.30)/1M | -€2,43 |
-| **TOTAL** | | **€21,02** |
+| Component | Calculation | Monthly |
+|-----------|------------|---------|
+| **4GB VPS** | ~€4.35 fixed | €4.35 |
+| **Groq Router** | 15,000 req × 300 tok × $0.05/1M | €0.25 |
+| **Embeddings** | 5,000 queries × $0.02/1K tok | €1.00 |
+| **Haiku (Cheap)** | 10,000 req × 2K tok × $0.25/1M | €5.00 |
+| **Haiku (Verifier)** | 2,000 calls × 500 tok × $0.25/1M | €0.25 |
+| **Sonnet (Premium)** | 3,000 req × 4K tok × $3/1M (input) | €3.60 |
+| **Sonnet (Premium)** | 3,000 req × 2K tok × $15/1M (output) | €9.00 |
+| **Prompt Cache Discount** | 3,000 req × 3K tok × ($3-$0.30)/1M | -€2.43 |
+| **TOTAL** | | **€21.02** |
 
-### 18.2 Szenario-Vergleich
+### 18.2 Scenario Comparison
 
-| Szenario | Requests/Tag | Premium % | Cache-Hit % | Kosten/Monat |
-|----------|--------------|-----------|-------------|--------------|
+| Scenario | Requests/Day | Premium % | Cache Hit % | Cost/Month |
+|----------|-------------|-----------|-------------|------------|
 | **Light** | 100 | 15% | 50% | €12-15 |
 | **Standard** | 500 | 20% | 40% | €20-25 |
 | **Heavy** | 1000 | 25% | 35% | €40-50 |
 | **Worst Case** | 2000 | 40% | 20% | €80-100 |
 
-### 18.3 Break-Even-Analyse
+### 18.3 Break-Even Analysis
 
 ```
-Ohne Gateway (direkt Sonnet):
-- 500 Req/Tag × 6K Tok × $18/1M = $162/Monat
+Without gateway (direct Sonnet):
+- 500 req/day × 6K tok × $18/1M = $162/month
 
-Mit Gateway:
-- ~$25/Monat
+With gateway:
+- ~$25/month
 
-Ersparnis: $137/Monat = 85%
-Break-Even: Ab 50 Requests/Tag
+Savings: $137/month = 85%
+Break-even: From 50 requests/day
 ```
 
 ---
 
 ## 19. Changelog
 
-### v1.3 (Februar 2026) - Cost-Optimized
+### v1.3 (February 2026) - Cost-Optimized
 
-**Infrastruktur:**
-- ✅ Hetzner statt AWS (-€60/Monat)
-- ✅ Groq statt Ollama (3x schneller, kein OOM)
+**Infrastructure:**
+- ✅ VPS instead of cloud platform (-€60/month)
+- ✅ Groq instead of Ollama (3x faster, no OOM)
 
-**Kostenoptimierung:**
-- ✅ Anthropic Prompt Caching (-90% System-Prompt-Kosten)
-- ✅ Risk-Stratified Verifier (-60% Verifier-Calls)
-- ✅ BM25 Fast-Path (-60% Embedding-Calls)
-- ✅ Query Embedding Cache (-30% Remote Embeddings)
-- ✅ Context Budgeting (-40% Premium Input)
+**Cost Optimization:**
+- ✅ Anthropic Prompt Caching (-90% system prompt costs)
+- ✅ Risk-Stratified Verifier (-60% verifier calls)
+- ✅ BM25 Fast Path (-60% embedding calls)
+- ✅ Query Embedding Cache (-30% remote embeddings)
+- ✅ Context Budgeting (-40% premium input)
 
-**Sicherheit:**
+**Security:**
 - ✅ Global Kill Switch (Soft → Throttle → Kill)
-- ✅ Idempotency Keys (keine Doppel-Calls)
-- ✅ Patch Risk Score (statt fixes Line-Limit)
+- ✅ Idempotency Keys (no duplicate calls)
+- ✅ Patch Risk Score (instead of fixed line limit)
 
-### v1.2 (Januar 2026) - Production-Ready
+### v1.2 (January 2026) - Production-Ready
 
-- ✅ Rate Limiting (Token-aware + Daily Budget)
-- ✅ Adaptive Keepalive (traffic-basiert)
+- ✅ Rate Limiting (token-aware + daily budget)
+- ✅ Adaptive Keepalive (traffic-based)
 - ✅ Hybrid Retrieval (BM25 + Embeddings)
 - ✅ Capability-based Tools
 - ✅ Event-Driven Cache Invalidation
-- ✅ Verifier mit JSON-Output
+- ✅ Verifier with JSON Output
 
-### v1.1 (Dezember 2025) - Security Hardening
+### v1.1 (December 2025) - Security Hardening
 
-- ✅ Hard Policy Gate VOR Router
-- ✅ Circuit Breaker + Fallback-Kette
-- ✅ Transaction-Pattern für Patches
-- ✅ Haiku-Verifier für Semantic Cache
+- ✅ Hard Policy Gate BEFORE Router
+- ✅ Circuit Breaker + Fallback Chain
+- ✅ Transaction Pattern for Patches
+- ✅ Haiku Verifier for Semantic Cache
 
 ### v1.0 (November 2025) - Initial
 
-- ✅ Dreistufiges Routing
-- ✅ Zweistufiges Caching (Exact + Semantic)
+- ✅ Three-Tier Routing
+- ✅ Two-Stage Caching (Exact + Semantic)
 - ✅ Working-Tree Fingerprint
-- ✅ Ollama für lokales Routing
+- ✅ Ollama for Local Routing
 
 ---
 
-## Anhang A: Schnellstart-Checkliste
+## Appendix A: Quick Start Checklist
 
 ```
-□ Hetzner CX22 bestellt (€4,35/Monat)
-□ Ubuntu 24.04 installiert
-□ SSH-Key eingerichtet
-□ Firewall konfiguriert (22, 80, 443)
-□ Python 3.11+ installiert
-□ FastAPI + Dependencies installiert
-□ Groq API-Key erhalten (groq.com)
-□ Anthropic API-Key erhalten (anthropic.com)
-□ .env mit Keys konfiguriert
-□ Systemd Service eingerichtet
-□ Nginx + SSL konfiguriert
-□ /health Endpoint erreichbar
-□ Erster Test-Request erfolgreich
-□ Monitoring eingerichtet
-□ Alerting konfiguriert
-□ Backup-Script eingerichtet
+□ 4GB VPS ordered (~€4.35/month)
+□ Ubuntu 24.04 installed
+□ SSH key configured
+□ Firewall configured (22, 80, 443)
+□ Python 3.11+ installed
+□ FastAPI + dependencies installed
+□ Groq API key obtained (groq.com)
+□ Anthropic API key obtained (anthropic.com)
+□ .env configured with keys
+□ Systemd service set up
+□ Nginx + SSL configured
+□ /health endpoint reachable
+□ First test request successful
+□ Monitoring set up
+□ Alerting configured
+□ Backup script set up
 ```
 
 ---
 
-## Anhang B: Troubleshooting
+## Appendix B: Troubleshooting
 
-### Problem: Groq-Timeouts
+### Problem: Groq Timeouts
 
 ```python
 # Symptom: httpx.TimeoutException
-# Lösung: Retry mit Backoff + Haiku-Fallback
+# Solution: Retry with backoff + Haiku fallback
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=0.1, max=2))
 async def groq_classify_with_retry(query: str):
     ...
 ```
 
-### Problem: Hohe Premium-Rate (>30%)
+### Problem: High Premium Rate (>30%)
 
 ```python
-# Diagnose:
-# 1. Router-Logs prüfen: Welche Queries → Premium?
-# 2. Häufige Patterns identifizieren
-# 3. Router-Prompt anpassen
+# Diagnosis:
+# 1. Check router logs: Which queries → Premium?
+# 2. Identify frequent patterns
+# 3. Adjust router prompt
 
-# Beispiel: "Erkläre mir X" sollte CHEAP sein, nicht PREMIUM
+# Example: "Explain X to me" should be CHEAP, not PREMIUM
 ```
 
-### Problem: Cache-Hit-Rate niedrig (<20%)
+### Problem: Low Cache Hit Rate (<20%)
 
 ```python
-# Mögliche Ursachen:
-# 1. Fingerprint ändert sich zu oft → Git-Hooks prüfen
-# 2. Similarity-Threshold zu hoch → 0.92 → 0.90
-# 3. Wenig wiederholte Queries → Cache-Warmup
+# Possible causes:
+# 1. Fingerprint changes too often → Check git hooks
+# 2. Similarity threshold too high → 0.92 → 0.90
+# 3. Few repeated queries → Cache warmup
 ```
 
-### Problem: Kill Switch zu früh aktiv
+### Problem: Kill Switch Triggers Too Early
 
 ```python
-# Anpassung der Limits in .env:
-DAILY_BUDGET_SOFT=10.0   # Statt 5
-DAILY_BUDGET_MEDIUM=30.0  # Statt 15
-DAILY_BUDGET_HARD=100.0   # Statt 50
+# Adjust limits in .env:
+DAILY_BUDGET_SOFT=10.0   # Instead of 5
+DAILY_BUDGET_MEDIUM=30.0  # Instead of 15
+DAILY_BUDGET_HARD=100.0   # Instead of 50
 ```
 
 ---
 
-**Dokument-Version:** 1.3.0  
-**Letzte Aktualisierung:** Februar 2026  
-**Autor:** Sp4cerat
-**Lizenz:** MIT
+**Document Version:** 1.3.0  
+**Last Updated:** February 2026  
+**Author:** OpenClaw Team  
+**License:** MIT
