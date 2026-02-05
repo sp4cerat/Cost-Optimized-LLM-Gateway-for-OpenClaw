@@ -2854,5 +2854,5 @@ DAILY_BUDGET_HARD=100.0   # Statt 50
 
 **Dokument-Version:** 1.3.0  
 **Letzte Aktualisierung:** Februar 2026  
-**Autor:** OpenClaw Team  
+**Autor:** Sp4cerat
 **Lizenz:** MIT
