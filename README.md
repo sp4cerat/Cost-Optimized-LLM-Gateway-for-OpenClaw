@@ -1,4 +1,3 @@
-
 # LLM Gateway Implementation Concept v1.3
 
 **Cost-Optimized AI Routing for OpenClaw**
@@ -58,6 +57,7 @@ An intelligent gateway with:
 | **Groq Router** | Fast intent classification | 3x faster than Ollama |
 | **Prompt Caching** | Anthropic cached system prompts | -90% system prompt costs |
 | **Context Budgeting** | Limited input tokens per tier | -40% premium input |
+| **Diff-Based Output** | Enforce diffs instead of full files | -70% premium output |
 | **VPS Infrastructure** | Fixed price instead of pay-per-use | -€60/month |
 
 ### 1.3 Cost Comparison
@@ -1820,6 +1820,239 @@ def compress_stacktraces(lines: list[str]) -> list[str]:
     return result
 ```
 
+### 11.4 Diff-Based Output Strategy (NEW in v1.3)
+
+#### Why Diffs Save Money
+
+Output tokens are the biggest cost driver for premium models: Sonnet charges **$15/1M output** vs. $3/1M input (5x ratio). Returning a full file when only 5 lines changed wastes output tokens massively.
+
+**Example:** A 200-line file with a 3-line bug fix:
+
+| Response Mode | Output Tokens | Cost (Sonnet) | Savings |
+|---------------|--------------|---------------|---------|
+| **Full file** | ~3,000 | $0.045 | Baseline |
+| **Unified diff** | ~300 | $0.0045 | **-90%** |
+| **Structured diff** | ~500 | $0.0075 | **-83%** |
+
+At 30 premium code-change requests/day, this saves **~$30-35/month** on output alone.
+
+#### When to Enforce Diffs
+
+```python
+class OutputStrategy:
+    """
+    Decides whether to request diff or full-file output
+    based on file size, task type, and model tier.
+    """
+    
+    # Thresholds for enforcing diff output
+    DIFF_THRESHOLD_LINES = 30      # Files >30 lines → diff
+    DIFF_THRESHOLD_TOKENS = 500    # Estimated output >500 tokens → diff
+    
+    # Response types that benefit from diffs
+    DIFF_ELIGIBLE_TYPES = [
+        "code_suggestion",
+        "code_review",       # When including fix suggestions
+        "command_execution",  # When modifying config files
+    ]
+    
+    # Response types that should always return full content
+    FULL_OUTPUT_TYPES = [
+        "explanation_generic",
+        "explanation_contextual",
+        "documentation",
+    ]
+    
+    def get_strategy(
+        self,
+        response_type: str,
+        tier: str,
+        file_context: Optional[dict] = None
+    ) -> dict:
+        """
+        Returns output strategy for a given request.
+        
+        Returns: {
+            "mode": "diff" | "full" | "hybrid",
+            "format": "unified_diff" | "search_replace" | "full_file",
+            "reason": str,
+            "max_output_tokens": int
+        }
+        """
+        # Non-code responses → always full
+        if response_type in self.FULL_OUTPUT_TYPES:
+            return {
+                "mode": "full",
+                "format": "full_file",
+                "reason": "non_code_response",
+                "max_output_tokens": self._get_output_limit(tier)
+            }
+        
+        # Cheap tier → full file is fine (low cost)
+        if tier in ("local", "cheap"):
+            return {
+                "mode": "full",
+                "format": "full_file",
+                "reason": "cheap_tier_no_savings",
+                "max_output_tokens": self._get_output_limit(tier)
+            }
+        
+        # Premium + code response → evaluate diff
+        if file_context:
+            file_lines = file_context.get("total_lines", 0)
+            
+            # Small files → full output is acceptable
+            if file_lines <= self.DIFF_THRESHOLD_LINES:
+                return {
+                    "mode": "full",
+                    "format": "full_file",
+                    "reason": f"small_file_{file_lines}_lines",
+                    "max_output_tokens": self._get_output_limit(tier)
+                }
+            
+            # Large files → enforce diff
+            return {
+                "mode": "diff",
+                "format": "unified_diff",
+                "reason": f"large_file_{file_lines}_lines",
+                "max_output_tokens": min(2000, self._get_output_limit(tier))
+            }
+        
+        # No file context but premium code task → default to diff
+        if response_type in self.DIFF_ELIGIBLE_TYPES:
+            return {
+                "mode": "diff",
+                "format": "unified_diff",
+                "reason": "code_task_default_diff",
+                "max_output_tokens": min(2000, self._get_output_limit(tier))
+            }
+        
+        return {
+            "mode": "full",
+            "format": "full_file",
+            "reason": "fallback_full",
+            "max_output_tokens": self._get_output_limit(tier)
+        }
+    
+    def _get_output_limit(self, tier: str) -> int:
+        limits = {"local": 2000, "cheap": 4000, "premium": 8000}
+        return limits.get(tier, 4000)
+
+output_strategy = OutputStrategy()
+```
+
+#### System Prompt Injection for Diff Mode
+
+```python
+DIFF_INSTRUCTION = """
+OUTPUT FORMAT RULE:
+When modifying existing files, you MUST respond with a unified diff — NOT the full file.
+Use this format:
+
+```diff
+--- a/path/to/file.py
++++ b/path/to/file.py
+@@ -<line>,<count> +<line>,<count> @@
+ context line (unchanged)
+-removed line
++added line
+ context line (unchanged)
+```
+
+Rules:
+- Include 3 lines of context above and below each change
+- For multiple changes in the same file, use multiple hunks
+- NEVER output the entire file when only a few lines change
+- For new files only: output the full file content
+
+This saves tokens and makes changes easier to review.
+"""
+
+async def build_premium_messages(
+    query: str,
+    context: dict,
+    output_strat: dict
+) -> list[dict]:
+    """Builds messages with output strategy injected."""
+    
+    # Inject diff instruction when strategy requires it
+    strategy_instruction = ""
+    if output_strat["mode"] == "diff":
+        strategy_instruction = DIFF_INSTRUCTION
+    
+    user_message = f"""
+{strategy_instruction}
+
+Project context:
+- Path: {context.get('project_path', 'N/A')}
+- Framework: {context.get('framework', 'N/A')}
+
+Active files:
+{context.get('active_files_summary', 'None')}
+
+Query:
+{query}
+"""
+    return [{"role": "user", "content": user_message}]
+```
+
+#### Output Token Savings Monitoring
+
+```python
+def track_output_savings(
+    response_type: str,
+    output_strategy: str,
+    actual_output_tokens: int,
+    file_total_lines: int
+):
+    """
+    Tracks estimated savings from diff-based output.
+    Compares actual output tokens vs. estimated full-file tokens.
+    """
+    # Estimate what full-file output would have cost
+    # Rule of thumb: ~15 tokens per line of code
+    estimated_full_tokens = file_total_lines * 15
+    
+    if output_strategy == "diff" and estimated_full_tokens > 0:
+        saved_tokens = max(0, estimated_full_tokens - actual_output_tokens)
+        savings_ratio = saved_tokens / estimated_full_tokens
+        saved_cost_usd = saved_tokens * (15.0 / 1_000_000)  # Sonnet output price
+        
+        metrics.increment("diff_output_saved_tokens", saved_tokens)
+        metrics.increment("diff_output_saved_usd", saved_cost_usd)
+        metrics.gauge("diff_output_savings_ratio", savings_ratio)
+        
+        log.info(
+            f"Diff savings: {saved_tokens} tokens saved "
+            f"({savings_ratio:.0%}), ${saved_cost_usd:.4f}"
+        )
+```
+
+#### Cost Calculation
+
+```python
+# Assumptions:
+# - 30 premium code-change requests/day (out of ~100 total premium)
+# - Average file: 150 lines (~2,250 tokens full output)
+# - Average diff: ~20 lines changed (~300 tokens)
+
+daily_code_changes = 30
+avg_full_output_tokens = 2250
+avg_diff_output_tokens = 300
+sonnet_output_price = 15.0 / 1_000_000
+
+# WITHOUT diff enforcement:
+monthly_full = daily_code_changes * 30 * avg_full_output_tokens * sonnet_output_price
+# = 30 * 30 * 2250 * 0.000015 = $30.38/month
+
+# WITH diff enforcement:
+monthly_diff = daily_code_changes * 30 * avg_diff_output_tokens * sonnet_output_price
+# = 30 * 30 * 300 * 0.000015 = $4.05/month
+
+# Savings: $30.38 - $4.05 = $26.33/month (~87%)
+# Combined with prompt caching: Total premium savings ~$33/month
+```
+
 ---
 
 ## 12. Capability-based Tools
@@ -2487,6 +2720,7 @@ async def two_stage_verify(cached: dict, fingerprint_current: str, fingerprint_c
 | `rate_limit_hits` | Rate limit hits | <5% | >15% | >25% | Limits |
 | `cache_size_mb` | Cache size | <500 | >800 | >1000 | Eviction |
 | `query_embedding_cache_hit` | Query embedding cache | >60% | <40% | <20% | TTL |
+| `diff_output_savings_ratio` | Output token savings from diffs | >60% | <30% | <15% | Prompt tuning |
 
 ### 16.2 Alerting Rules
 
@@ -2754,6 +2988,7 @@ Break-even: From 50 requests/day
 - ✅ BM25 Fast Path (-60% embedding calls)
 - ✅ Query Embedding Cache (-30% remote embeddings)
 - ✅ Context Budgeting (-40% premium input)
+- ✅ Diff-Based Output Enforcement (-70% premium output tokens)
 
 **Security:**
 - ✅ Global Kill Switch (Soft → Throttle → Kill)
@@ -2856,3 +3091,4 @@ DAILY_BUDGET_HARD=100.0   # Instead of 50
 **Last Updated:** February 2026  
 **Author:** OpenClaw Team  
 **License:** MIT
+
